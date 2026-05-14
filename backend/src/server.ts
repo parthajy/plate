@@ -9,6 +9,7 @@ import { AppError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
+import { foodRoutes } from './routes/food.js';
 import './types.js';
 
 async function build() {
@@ -52,6 +53,7 @@ async function build() {
   await fastify.register(healthRoutes);
   await fastify.register(authRoutes, { prefix: '/v1/auth' });
   await fastify.register(meRoutes, { prefix: '/v1/me' });
+  await fastify.register(foodRoutes, { prefix: '/v1/food' });
 
   return fastify;
 }
