@@ -9,6 +9,19 @@ export interface MeResponse {
   email: string;
   displayName: string | null;
   onboardedAt: string | null;
+  // Profile fields (null until onboarding is complete)
+  sex: string | null;
+  birthdate: string | null;
+  heightCm: number | null;
+  weightKg: string | null;
+  activities: string[] | null;
+  goal: string | null;
+  dailyKcal: number | null;
+  dailyProteinG: number | null;
+  dailyCarbsG: number | null;
+  dailyFatG: number | null;
+  units: string | null;
+  timezone: string | null;
 }
 
 interface AuthState {
