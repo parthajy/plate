@@ -1,0 +1,24 @@
+# Caddyfile for the production droplet. Auto-renews SSL via Let's Encrypt.
+# Install location: /etc/caddy/Caddyfile
+{
+  email ops@plate.best
+}
+
+api.plate.best {
+  reverse_proxy 127.0.0.1:3000
+  encode gzip zstd
+
+  header {
+    # Security headers
+    Strict-Transport-Security "max-age=31536000; includeSubDomains; preload"
+    X-Content-Type-Options "nosniff"
+    X-Frame-Options "DENY"
+    Referrer-Policy "no-referrer"
+    Permissions-Policy "geolocation=(), microphone=(), camera=()"
+  }
+
+  log {
+    output file /var/log/caddy/api.plate.best.log
+    format json
+  }
+}

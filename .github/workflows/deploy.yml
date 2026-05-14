@@ -1,0 +1,57 @@
+name: Deploy backend
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'backend/**'
+      - 'shared/**'
+      - 'package.json'
+      - 'package-lock.json'
+      - '.github/workflows/deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: deploy-backend
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: SSH deploy to droplet
+        uses: appleboy/ssh-action@v1.2.0
+        with:
+          host: ${{ secrets.DROPLET_HOST }}
+          username: ${{ secrets.DROPLET_USER }}
+          key: ${{ secrets.DROPLET_SSH_KEY }}
+          envs: GITHUB_SHA
+          script: |
+            set -euo pipefail
+            cd ~/plate
+            git fetch --quiet origin main
+            git reset --hard origin/main
+            export GITHUB_SHA=${{ github.sha }}
+            npm ci --include=dev
+            cd backend
+            npm run build
+            npm run db:migrate
+            pm2 reload ecosystem.config.cjs --update-env || pm2 start ecosystem.config.cjs
+            pm2 save
+
+  smoke:
+    needs: deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Hit /health and verify SHA
+        run: |
+          for i in 1 2 3 4 5; do
+            body=$(curl -fsSL https://api.plate.best/health || true)
+            echo "$body"
+            echo "$body" | grep -q "${GITHUB_SHA}" && exit 0
+            sleep 5
+          done
+          echo "Build SHA not visible at /health"
+          exit 1

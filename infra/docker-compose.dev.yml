@@ -1,0 +1,23 @@
+# DEVELOPMENT ONLY. Production Postgres is installed via apt on the droplet
+# (see infra/provision.sh). Do not deploy this file.
+services:
+  postgres:
+    image: postgres:16-alpine
+    container_name: plate-postgres-dev
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: plate
+      POSTGRES_PASSWORD: plate
+      POSTGRES_DB: plate_dev
+    ports:
+      - '5432:5432'
+    volumes:
+      - plate-pg-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ['CMD-SHELL', 'pg_isready -U plate -d plate_dev']
+      interval: 5s
+      timeout: 5s
+      retries: 5
+
+volumes:
+  plate-pg-data:
