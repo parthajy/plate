@@ -2,10 +2,13 @@ import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
+import { ZodError } from 'zod';
 import { config, isProd } from './config.js';
 import { loggerOptions } from './lib/logger.js';
 import { AppError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
+import { authRoutes } from './routes/auth.js';
+import './types.js';
 
 async function build() {
   const fastify = Fastify({
@@ -19,6 +22,19 @@ async function build() {
   await fastify.register(sensible);
 
   fastify.setErrorHandler((err, req, reply) => {
+    if (err instanceof ZodError) {
+      void reply.code(400).send({
+        error: {
+          code: 'VALIDATION',
+          message: 'Invalid request',
+          issues: err.issues.map((i) => ({
+            path: i.path.join('.'),
+            message: i.message,
+          })),
+        },
+      });
+      return;
+    }
     if (err instanceof AppError) {
       void reply.code(err.statusCode).send({
         error: { code: err.code, message: err.message, ...(err.details ?? {}) },
@@ -33,6 +49,7 @@ async function build() {
   });
 
   await fastify.register(healthRoutes);
+  await fastify.register(authRoutes, { prefix: '/v1/auth' });
 
   return fastify;
 }
