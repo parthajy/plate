@@ -1,0 +1,13 @@
+node_modules
+dist
+build
+.expo
+.expo-shared
+mobile/ios
+mobile/android
+backend/drizzle
+*.lock
+package-lock.json
+plate-starter
+mnt
+design

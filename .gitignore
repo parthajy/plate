@@ -1,0 +1,57 @@
+# OS
+.DS_Store
+Thumbs.db
+
+# Editors
+.vscode/
+.idea/
+*.swp
+
+# Node
+node_modules/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Env
+.env
+.env.local
+.env.*.local
+
+# Build output
+dist/
+build/
+*.tsbuildinfo
+
+# Expo
+.expo/
+.expo-shared/
+*.jks
+*.p8
+*.p12
+*.key
+*.mobileprovision
+*.orig.*
+web-build/
+
+# Native
+mobile/ios/
+mobile/android/
+
+# EAS
+mobile/.easignore
+
+# Logs
+*.log
+logs/
+
+# Coverage
+coverage/
+
+# Drizzle
+backend/drizzle/meta/_journal.json.bak
+
+# Local artifacts kept out of git but on disk
+plate-starter/
+plate-starter.zip
+mnt/
