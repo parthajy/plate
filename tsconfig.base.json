@@ -20,12 +20,6 @@
     "forceConsistentCasingInFileNames": true,
 
     "declaration": false,
-    "sourceMap": true,
-
-    "baseUrl": ".",
-    "paths": {
-      "@plate/shared": ["shared/src/index.ts"],
-      "@plate/shared/*": ["shared/src/*"]
-    }
+    "sourceMap": true
   }
 }

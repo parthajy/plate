@@ -9,14 +9,16 @@
     "mobile"
   ],
   "scripts": {
-    "typecheck": "npm run typecheck --workspaces --if-present",
+    "build:shared": "npm run build --workspace=@plate/shared",
+    "typecheck": "npm run build:shared && npm run typecheck --workspaces --if-present",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "dev:db": "docker compose -f infra/docker-compose.dev.yml up -d",
     "dev:db:stop": "docker compose -f infra/docker-compose.dev.yml down",
-    "dev:backend": "npm run dev --workspace=backend",
-    "dev:mobile": "npm run start --workspace=mobile",
+    "dev:backend": "npm run build:shared && npm run dev --workspace=@plate/backend",
+    "dev:mobile": "npm run build:shared && npm run start --workspace=@plate/mobile",
+    "postinstall": "npm run build:shared --if-present",
     "prepare": "lefthook install || true"
   },
   "devDependencies": {
