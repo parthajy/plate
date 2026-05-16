@@ -44,6 +44,7 @@ Read in this order before contributing:
 4. [`ROADMAP.md`](./ROADMAP.md) — phased build plan
 
 Plus package-scoped docs:
+
 - [`mobile/CLAUDE.md`](./mobile/CLAUDE.md)
 - [`backend/CLAUDE.md`](./backend/CLAUDE.md)
 

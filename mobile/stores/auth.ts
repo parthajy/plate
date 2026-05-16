@@ -1,5 +1,5 @@
 import { create } from 'zustand';
-import type { TokenPair } from '@plate/shared';
+import type { ProfilePatchInput, TokenPair } from '@plate/shared';
 import { api, ApiError, hydrateTokens, setTokens, setUnauthenticatedHandler } from '../lib/api';
 
 export type AuthStatus = 'loading' | 'authenticated' | 'unauthenticated';
@@ -32,6 +32,17 @@ interface AuthState {
   signIn: (email: string, password: string) => Promise<void>;
   signOut: () => Promise<void>;
   refreshMe: () => Promise<void>;
+  updateProfile: (patch: ProfilePatchInput) => Promise<void>;
+  deleteAccount: () => Promise<void>;
+  // Primary auth path: OTP via Resend
+  requestOtp: (email: string) => Promise<void>;
+  verifyOtp: (email: string, code: string) => Promise<{ isNewUser: boolean }>;
+  signInWithGoogleIdToken: (idToken: string) => Promise<{ isNewUser: boolean }>;
+  signInWithAppleIdentityToken: (args: {
+    identityToken: string;
+    givenName?: string;
+    familyName?: string;
+  }) => Promise<{ isNewUser: boolean }>;
 }
 
 export const useAuth = create<AuthState>((set) => ({
@@ -94,6 +105,62 @@ export const useAuth = create<AuthState>((set) => ({
   refreshMe: async () => {
     const me = await api.get<MeResponse>('/v1/me');
     set({ user: me });
+  },
+
+  updateProfile: async (patch) => {
+    await api.patch('/v1/me/profile', patch);
+    const me = await api.get<MeResponse>('/v1/me');
+    set({ user: me });
+  },
+
+  deleteAccount: async () => {
+    await api.delete('/v1/me');
+    await setTokens(null);
+    set({ status: 'unauthenticated', user: null });
+  },
+
+  requestOtp: async (email) => {
+    await api.post('/v1/auth/request-otp', { email }, { auth: false });
+  },
+
+  verifyOtp: async (email, code) => {
+    const resp = await api.post<{ tokens: TokenPair; isNewUser: boolean }>(
+      '/v1/auth/verify-otp',
+      { email, code },
+      { auth: false },
+    );
+    await setTokens(resp.tokens);
+    const me = await api.get<MeResponse>('/v1/me');
+    set({ status: 'authenticated', user: me });
+    return { isNewUser: resp.isNewUser };
+  },
+
+  signInWithGoogleIdToken: async (idToken) => {
+    const resp = await api.post<{ tokens: TokenPair; isNewUser: boolean }>(
+      '/v1/auth/google',
+      { idToken },
+      { auth: false },
+    );
+    await setTokens(resp.tokens);
+    const me = await api.get<MeResponse>('/v1/me');
+    set({ status: 'authenticated', user: me });
+    return { isNewUser: resp.isNewUser };
+  },
+
+  signInWithAppleIdentityToken: async ({ identityToken, givenName, familyName }) => {
+    const resp = await api.post<{ tokens: TokenPair; isNewUser: boolean }>(
+      '/v1/auth/apple',
+      {
+        identityToken,
+        ...(givenName ? { givenName } : {}),
+        ...(familyName ? { familyName } : {}),
+      },
+      { auth: false },
+    );
+    await setTokens(resp.tokens);
+    const me = await api.get<MeResponse>('/v1/me');
+    set({ status: 'authenticated', user: me });
+    return { isNewUser: resp.isNewUser };
   },
 }));
 

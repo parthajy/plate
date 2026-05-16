@@ -16,7 +16,9 @@ import {
 // must `CREATE EXTENSION IF NOT EXISTS pgcrypto;` before any table is created.
 
 export const users = pgTable('users', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   email: text('email').notNull().unique(),
   passwordHash: text('password_hash'),
   appleSub: text('apple_sub').unique(),
@@ -49,7 +51,9 @@ export const profiles = pgTable('profiles', {
 export const foods = pgTable(
   'foods',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     source: text('source').notNull(),
     sourceRef: text('source_ref'),
     name: text('name').notNull(),
@@ -71,11 +75,14 @@ export const foods = pgTable(
 export const foodLogs = pgTable(
   'food_logs',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
     foodId: uuid('food_id').references(() => foods.id, { onDelete: 'set null' }),
+    customName: text('custom_name'),
     grams: numeric('grams', { precision: 7, scale: 2 }).notNull(),
     kcal: numeric('kcal', { precision: 6, scale: 2 }).notNull(),
     proteinG: numeric('protein_g', { precision: 5, scale: 2 }).notNull(),
@@ -97,7 +104,9 @@ export const foodLogs = pgTable(
 export const workouts = pgTable(
   'workouts',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -119,7 +128,9 @@ export const workouts = pgTable(
 export const pantryItems = pgTable(
   'pantry_items',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -134,7 +145,9 @@ export const pantryItems = pgTable(
 export const coachMessages = pgTable(
   'coach_messages',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),
@@ -149,7 +162,9 @@ export const coachMessages = pgTable(
 );
 
 export const refreshTokens = pgTable('refresh_tokens', {
-  id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+  id: uuid('id')
+    .primaryKey()
+    .default(sql`gen_random_uuid()`),
   userId: uuid('user_id')
     .notNull()
     .references(() => users.id, { onDelete: 'cascade' }),
@@ -164,7 +179,9 @@ export const refreshTokens = pgTable('refresh_tokens', {
 export const rateLimitBuckets = pgTable(
   'rate_limit_buckets',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     key: text('key').notNull(), // e.g. 'user:<uuid>:food.scan' or 'ip:1.2.3.4:auth.login'
     action: text('action').notNull(),
     tokens: numeric('tokens', { precision: 10, scale: 4 }).notNull(),
@@ -175,11 +192,46 @@ export const rateLimitBuckets = pgTable(
   }),
 );
 
+// One-time login codes for the OTP / Resend flow. We store a sha256 of the
+// 6-digit code rather than the code itself; verification compares hashes.
+// Multiple unconsumed rows per email are fine — verify() picks the most
+// recent unexpired one.
+export const otpCodes = pgTable(
+  'otp_codes',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    email: text('email').notNull(),
+    codeHash: text('code_hash').notNull(),
+    expiresAt: timestamp('expires_at', { withTimezone: true }).notNull(),
+    consumedAt: timestamp('consumed_at', { withTimezone: true }),
+    attempts: integer('attempts').notNull().default(0),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    emailIdx: index('idx_otp_email_created').on(t.email, t.createdAt),
+  }),
+);
+
+// Food-scan result cache, keyed by sha256 of the uploaded image. Lets repeat
+// scans of the same photo skip the storage upload + Vision call. 24h TTL is
+// enforced at the query level (no scheduled cleanup yet — table stays small
+// because hashes are unique per image).
+export const scanCache = pgTable('scan_cache', {
+  sha256: text('sha256').primaryKey(),
+  imageUrl: text('image_url').notNull(),
+  result: jsonb('result').notNull(),
+  createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+});
+
 // Per-call AI cost tracking. Used for per-user daily budgets + future billing.
 export const usageEvents = pgTable(
   'usage_events',
   {
-    id: uuid('id').primaryKey().default(sql`gen_random_uuid()`),
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
     userId: uuid('user_id')
       .notNull()
       .references(() => users.id, { onDelete: 'cascade' }),

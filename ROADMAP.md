@@ -35,6 +35,7 @@ The minimum that lets a real human use this as a calorie tracker, even
 without the AI bells and whistles.
 
 ### Auth
+
 - [ ] Email/password signup + login
 - [ ] JWT issuance + refresh
 - [ ] Tokens stored in `expo-secure-store`
@@ -42,18 +43,14 @@ without the AI bells and whistles.
 - [ ] "Forgot password" — defer to phase 4, ship without it
 
 ### Onboarding
-- [ ] 5–6 screen onboarding flow:
-      1. Welcome → sign up
-      2. Sex, birthdate
-      3. Height, weight
-      4. Activities (multi-select chips: gym, run, cycle, swim, sports, yoga)
-      5. Goal (lose / maintain / gain / recomp) + rate
-      6. Calculated targets (display, allow override)
+
+- [ ] 5–6 screen onboarding flow: 1. Welcome → sign up 2. Sex, birthdate 3. Height, weight 4. Activities (multi-select chips: gym, run, cycle, swim, sports, yoga) 5. Goal (lose / maintain / gain / recomp) + rate 6. Calculated targets (display, allow override)
 - [ ] Mifflin-St Jeor BMR formula + activity multiplier → calorie target
 - [ ] Macro split: 1.6g/kg protein default, 25–30% fat, remainder carbs
 - [ ] Persist to `profiles` table
 
 ### Today screen
+
 - [ ] Calorie ring (SVG, animated)
 - [ ] Macro bars (P/C/F) below
 - [ ] Meal log list, grouped by meal type
@@ -61,6 +58,7 @@ without the AI bells and whistles.
 - [ ] Date scrubber to view past days
 
 ### Food logging (manual)
+
 - [ ] Food search (local DB → USDA fallback)
 - [ ] Seed local DB with the top ~5k USDA common foods
 - [ ] Quick log: pick food, enter grams or pick a serving, choose meal, save
@@ -79,6 +77,7 @@ This is the wedge. Phase 1 is table stakes; phase 2 is why someone switches
 from MyFitnessPal.
 
 ### Food scan
+
 - [ ] Camera screen with live preview
 - [ ] Capture button + capture-on-stability auto-shoot
 - [ ] Client-side image compress (max 1024px, 0.6 quality JPEG)
@@ -91,6 +90,7 @@ from MyFitnessPal.
 - [ ] Failure UX: low confidence → suggest manual entry, don't hide it
 
 ### Coach (Kai)
+
 - [ ] Coach tab with chat UI
 - [ ] Persona prompt in `backend/src/services/ai/prompts/coach.ts`
 - [ ] Context builder: profile + goals + today's totals + last 7d workouts + last ~20 messages
@@ -100,6 +100,7 @@ from MyFitnessPal.
 - [ ] Daily proactive nudge — Kai messages you at ~4pm if protein is <50% of target
 
 ### Connections
+
 - [ ] AI calls happen via a shared `services/ai.ts` module
 - [ ] Per-user daily AI budget enforcement (e.g. 50 scans + 100 coach turns)
 - [ ] Logged AI usage in `usage_events` for cost tracking
@@ -115,6 +116,7 @@ own data ("you've already had 80g protein today, you need ~60 more").
 Round out the product so it feels complete on launch.
 
 ### Pantry → Recipe
+
 - [ ] Pantry screen: ingredient chips, add/remove
 - [ ] Quick-add common ingredients (chicken, rice, eggs, etc.)
 - [ ] Generate recipe button → POST `/v1/recipes/generate`
@@ -124,6 +126,7 @@ Round out the product so it feels complete on launch.
 - [ ] "Log as meal" → pre-fills food log with calculated macros
 
 ### Workouts
+
 - [ ] Workouts tab: list, filters, totals
 - [ ] Quick log: type, duration, notes (90% of users will use this)
 - [ ] Detailed log (optional): gym → sets/reps; run → distance/pace
@@ -133,6 +136,7 @@ Round out the product so it feels complete on launch.
 - [ ] Workouts contribute to "calories out" on Today screen (toggleable)
 
 ### You / Settings
+
 - [ ] Profile editing
 - [ ] Goal editing (re-runs calculation)
 - [ ] Units (metric / imperial)
@@ -141,6 +145,7 @@ Round out the product so it feels complete on launch.
 - [ ] Sign out, delete account (required by App Store)
 
 ### Polish
+
 - [ ] All loading states use skeletons, no raw spinners
 - [ ] Empty states designed for every screen
 - [ ] Onboarding-skip path for re-installs
@@ -185,7 +190,7 @@ These are good ideas. They're not ours. Saying no to them is how we ship.
 - ❌ **Coach voice notes / video** — text only, faster, cheaper, better
 - ❌ **Web app at launch** — mobile first, mobile only initially
 - ❌ **Gamification (streaks, badges, XP)** — patronizing, doesn't move retention
-   in the segment we care about. Reconsider only if data says otherwise.
+  in the segment we care about. Reconsider only if data says otherwise.
 
 ---
 

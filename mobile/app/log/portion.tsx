@@ -103,7 +103,7 @@ export default function PortionScreen() {
     setErr(null);
     try {
       await logFood.mutateAsync({
-        ...(isCustom ? {} : { foodId: params.foodId }),
+        ...(isCustom ? { name: params.name } : { foodId: params.foodId }),
         grams: gNum,
         kcal: Math.round(computed.kcal * 10) / 10,
         proteinG: Math.round(computed.proteinG * 10) / 10,

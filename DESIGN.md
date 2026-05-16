@@ -37,34 +37,34 @@ hardcode hex anywhere else.
 ```ts
 export const colors = {
   // Backgrounds
-  bg:         '#0b0b0a',  // page background — warm near-black
-  bgWarm:     '#100f0d',  // slightly elevated (modal sheets)
-  surface:    '#161513',  // cards, list items
-  surface2:   '#1d1c19',  // input fields, raised surfaces
-  border:     '#28261f',  // hairlines
-  borderHi:   '#3a3830',  // emphasized borders, focused inputs
+  bg: '#0b0b0a', // page background — warm near-black
+  bgWarm: '#100f0d', // slightly elevated (modal sheets)
+  surface: '#161513', // cards, list items
+  surface2: '#1d1c19', // input fields, raised surfaces
+  border: '#28261f', // hairlines
+  borderHi: '#3a3830', // emphasized borders, focused inputs
 
   // Text
-  text:       '#f6f3e9',  // primary — warm cream, NOT pure white
-  text2:      '#b8b4a5',  // secondary
-  text3:      '#6f6c61',  // tertiary / metadata
-  textInv:    '#000000',  // on accent backgrounds
+  text: '#f6f3e9', // primary — warm cream, NOT pure white
+  text2: '#b8b4a5', // secondary
+  text3: '#6f6c61', // tertiary / metadata
+  textInv: '#000000', // on accent backgrounds
 
   // Brand
-  accent:     '#dcff4f',  // electric lime — primary CTA, key data
-  accentDim:  '#a8c43c',  // accent on hover/pressed
-  accent2:    '#ff6a1a',  // burnt orange — secondary accent, sparingly
+  accent: '#dcff4f', // electric lime — primary CTA, key data
+  accentDim: '#a8c43c', // accent on hover/pressed
+  accent2: '#ff6a1a', // burnt orange — secondary accent, sparingly
 
   // Semantic
-  good:       '#7ee08a',  // success, "on track"
-  warn:       '#ffb347',  // caution, over budget by a little
-  danger:     '#ff5a5a',  // error, well over budget
+  good: '#7ee08a', // success, "on track"
+  warn: '#ffb347', // caution, over budget by a little
+  danger: '#ff5a5a', // error, well over budget
 
   // Macro chart colors (consistent everywhere)
-  protein:    '#dcff4f',  // lime
-  carbs:      '#ff6a1a',  // orange
-  fat:        '#ffb347',  // amber
-}
+  protein: '#dcff4f', // lime
+  carbs: '#ff6a1a', // orange
+  fat: '#ffb347', // amber
+};
 ```
 
 ### Light theme (must work, ship together with dark)
@@ -74,30 +74,30 @@ just invert. Light mode has its own warmth.
 
 ```ts
 export const colorsLight = {
-  bg:         '#faf8f1',  // off-white, warm
-  bgWarm:     '#f3efe3',
-  surface:    '#ffffff',
-  surface2:   '#f3efe3',
-  border:     '#e6e0cf',
-  borderHi:   '#cfc8b3',
+  bg: '#faf8f1', // off-white, warm
+  bgWarm: '#f3efe3',
+  surface: '#ffffff',
+  surface2: '#f3efe3',
+  border: '#e6e0cf',
+  borderHi: '#cfc8b3',
 
-  text:       '#15140f',
-  text2:      '#5a574d',
-  text3:      '#8a857a',
-  textInv:    '#ffffff',
+  text: '#15140f',
+  text2: '#5a574d',
+  text3: '#8a857a',
+  textInv: '#ffffff',
 
-  accent:     '#7a9b00',  // darker lime (lime on white is unreadable)
-  accentDim:  '#5d7700',
-  accent2:    '#c75518',
+  accent: '#7a9b00', // darker lime (lime on white is unreadable)
+  accentDim: '#5d7700',
+  accent2: '#c75518',
 
-  good:       '#3d8a4a',
-  warn:       '#c47700',
-  danger:     '#c93838',
+  good: '#3d8a4a',
+  warn: '#c47700',
+  danger: '#c93838',
 
-  protein:    '#7a9b00',
-  carbs:      '#c75518',
-  fat:        '#c47700',
-}
+  protein: '#7a9b00',
+  carbs: '#c75518',
+  fat: '#c47700',
+};
 ```
 
 **Default is dark.** Respect `useColorScheme()`. Persist user override in SecureStore.
@@ -122,23 +122,23 @@ custom display font** (Fraunces) for personality in headers.
 ```ts
 export const type = {
   // Display — Fraunces, opsz 144, weight 400-500
-  display1:   { font: 'Fraunces', size: 44, lineHeight: 46, letterSpacing: -1.2, weight: '400' },
-  display2:   { font: 'Fraunces', size: 32, lineHeight: 34, letterSpacing: -0.8, weight: '400' },
-  display3:   { font: 'Fraunces', size: 24, lineHeight: 26, letterSpacing: -0.5, weight: '500' },
+  display1: { font: 'Fraunces', size: 44, lineHeight: 46, letterSpacing: -1.2, weight: '400' },
+  display2: { font: 'Fraunces', size: 32, lineHeight: 34, letterSpacing: -0.8, weight: '400' },
+  display3: { font: 'Fraunces', size: 24, lineHeight: 26, letterSpacing: -0.5, weight: '500' },
 
   // Body — System
-  bodyLg:     { size: 17, lineHeight: 24, weight: '400' },
-  body:       { size: 15, lineHeight: 22, weight: '400' },
-  bodySm:     { size: 13, lineHeight: 18, weight: '400' },
+  bodyLg: { size: 17, lineHeight: 24, weight: '400' },
+  body: { size: 15, lineHeight: 22, weight: '400' },
+  bodySm: { size: 13, lineHeight: 18, weight: '400' },
 
   // Labels — System, slightly heavier
-  label:      { size: 13, lineHeight: 16, weight: '500' },
-  labelSm:    { size: 11, lineHeight: 14, weight: '500' },
+  label: { size: 13, lineHeight: 16, weight: '500' },
+  labelSm: { size: 11, lineHeight: 14, weight: '500' },
 
   // Mono — for numbers, codes, timestamps
-  mono:       { font: 'mono', size: 12, lineHeight: 16, letterSpacing: 0.5, weight: '500' },
-  monoSm:     { font: 'mono', size: 10, lineHeight: 13, letterSpacing: 1.2, weight: '500' }, // UPPERCASE labels
-}
+  mono: { font: 'mono', size: 12, lineHeight: 16, letterSpacing: 0.5, weight: '500' },
+  monoSm: { font: 'mono', size: 10, lineHeight: 13, letterSpacing: 1.2, weight: '500' }, // UPPERCASE labels
+};
 ```
 
 ### Rules
@@ -170,7 +170,7 @@ export const space = {
   7: 48,
   8: 64,
   9: 96,
-}
+};
 ```
 
 - Tap targets: minimum 44pt (iOS) / 48dp (Android). Use `hitSlop` to extend if
@@ -184,12 +184,12 @@ export const space = {
 
 ```ts
 export const radius = {
-  sm: 8,    // chips, small buttons
-  md: 12,   // input fields, list items
-  lg: 16,   // cards
-  xl: 22,   // modal sheets
+  sm: 8, // chips, small buttons
+  md: 12, // input fields, list items
+  lg: 16, // cards
+  xl: 22, // modal sheets
   full: 9999,
-}
+};
 ```
 
 **No shadows on Android** — they look bad, render badly, hurt perf.
@@ -212,13 +212,13 @@ shadowOffset: { width: 0, height: 4 },
 
 ```ts
 // Standard spring
-withSpring(value, { damping: 18, stiffness: 200, mass: 1 })
+withSpring(value, { damping: 18, stiffness: 200, mass: 1 });
 
 // Snappy (buttons, toggles)
-withSpring(value, { damping: 22, stiffness: 380 })
+withSpring(value, { damping: 22, stiffness: 380 });
 
 // Soft (sheet opens, screen transitions)
-withSpring(value, { damping: 20, stiffness: 140 })
+withSpring(value, { damping: 20, stiffness: 140 });
 ```
 
 ### Rules
@@ -253,6 +253,7 @@ content, not chrome).
 ### Cards
 
 Default card:
+
 - Background: `surface`
 - Border: 1px `border`
 - Radius: `lg` (16)
@@ -289,6 +290,7 @@ Sizes: `sm` (32h), `md` (44h, default), `lg` (52h, hero CTAs only).
 ### Modal sheets
 
 Use `@gorhom/bottom-sheet`. Native feel, gesture-driven.
+
 - Drag-to-dismiss
 - Backdrop: black at 50% opacity
 - Sheet bg: `bgWarm`
@@ -356,7 +358,7 @@ Non-negotiable, not optional.
 
 ## Platform-specific touches
 
-A few places we *don't* enforce cross-platform consistency, because native
+A few places we _don't_ enforce cross-platform consistency, because native
 feel matters more:
 
 - **Haptics**: `expo-haptics` on iOS only by default. Android haptics feel

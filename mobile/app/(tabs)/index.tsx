@@ -1,14 +1,17 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Plus } from 'lucide-react-native';
+import { ChefHat, ChevronRight, Plus } from 'lucide-react-native';
+import { useQuery } from '@tanstack/react-query';
+import type { PantryListResponse } from '@plate/shared';
+import { api } from '../../lib/api';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalorieRing } from '../../components/today/CalorieRing';
 import { MacroBar } from '../../components/today/MacroBar';
 import { MealRow } from '../../components/today/MealRow';
 import { DateScrubber } from '../../components/today/DateScrubber';
-import { Button } from '../../components/ui/Button';
 import { useDailyLogs, useDeleteLog } from '../../hooks/useDailyLogs';
+import { useWorkouts } from '../../hooks/useWorkouts';
 import { useAuth } from '../../stores/auth';
 import { fmtDateStamp, toIsoDate } from '../../lib/formatters';
 import { colors, radius, type } from '../../lib/theme';
@@ -21,7 +24,15 @@ export default function Today() {
 
   const isoDate = toIsoDate(date);
   const { data, refetch, isFetching, isLoading } = useDailyLogs(isoDate);
+  const { data: workoutsData } = useWorkouts(isoDate);
+  const { data: pantryData } = useQuery({
+    queryKey: ['pantry', 'items'],
+    queryFn: () => api.get<PantryListResponse>('/v1/pantry/items'),
+    staleTime: 60_000,
+  });
+  const pantryItems = pantryData?.items ?? [];
   const deleteLog = useDeleteLog(isoDate);
+  const kcalOut = workoutsData?.totals.kcalBurned ?? 0;
 
   const target = useMemo(
     () => ({
@@ -89,6 +100,32 @@ export default function Today() {
           <CalorieRing consumed={totals.kcal} target={target.kcal} />
         </View>
 
+        {kcalOut > 0 ? (
+          <View
+            style={{
+              alignSelf: 'center',
+              flexDirection: 'row',
+              alignItems: 'baseline',
+              gap: 6,
+              marginTop: -6,
+              marginBottom: 4,
+            }}
+          >
+            <Text
+              style={{
+                ...type.monoSm,
+                color: colors.text3,
+                letterSpacing: 1.2,
+                textTransform: 'uppercase',
+              }}
+            >
+              Out
+            </Text>
+            <Text style={[type.label, { color: colors.accentDim }]}>−{kcalOut} kcal</Text>
+            <Text style={[type.bodySm, { color: colors.text3 }]}>· today</Text>
+          </View>
+        ) : null}
+
         <View
           style={{
             flexDirection: 'row',
@@ -113,6 +150,91 @@ export default function Today() {
             color={colors.carbs}
           />
           <MacroBar label="Fat" current={totals.fatG} target={target.fatG} color={colors.fat} />
+        </View>
+
+        <View style={{ marginTop: 28 }}>
+          <View
+            style={{
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              marginBottom: 8,
+            }}
+          >
+            <Text
+              style={{
+                ...type.monoSm,
+                color: colors.text3,
+                letterSpacing: 1.4,
+                textTransform: 'uppercase',
+              }}
+            >
+              From your fridge
+            </Text>
+            <Pressable
+              onPress={() => router.push('/pantry')}
+              hitSlop={8}
+              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
+            >
+              <Text style={{ ...type.label, color: colors.accent }}>Edit</Text>
+              <ChevronRight size={14} color={colors.accent} strokeWidth={2.4} />
+            </Pressable>
+          </View>
+
+          <Pressable
+            onPress={() => router.push('/pantry')}
+            style={({ pressed }) => ({
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 14,
+              paddingVertical: 14,
+              paddingHorizontal: 18,
+              borderRadius: 999,
+              // `accent` flips lime → dark-olive between modes; pairs cleanly
+              // with `textInv` for the chip label.
+              backgroundColor: colors.accent,
+              transform: [{ scale: pressed ? 0.985 : 1 }],
+            })}
+            accessibilityRole="button"
+            accessibilityLabel="What can I make from what I have"
+          >
+            <View
+              style={{
+                width: 44,
+                height: 44,
+                borderRadius: 22,
+                backgroundColor: 'rgba(0,0,0,0.18)',
+                alignItems: 'center',
+                justifyContent: 'center',
+              }}
+            >
+              <ChefHat size={22} color={colors.textInv} strokeWidth={1.8} />
+            </View>
+            <View style={{ flex: 1 }}>
+              <Text
+                style={{
+                  ...type.display3,
+                  color: colors.textInv,
+                  fontSize: 20,
+                  lineHeight: 24,
+                }}
+              >
+                What can I make today?
+              </Text>
+              <Text
+                style={{
+                  ...type.bodySm,
+                  color: colors.textInv,
+                  opacity: 0.72,
+                  marginTop: 2,
+                }}
+              >
+                {pantryItems.length > 0
+                  ? `${pantryItems.length} ingredient${pantryItems.length === 1 ? '' : 's'} in your pantry`
+                  : "Tap on what you have, I'll cook up a recipe"}
+              </Text>
+            </View>
+          </Pressable>
         </View>
 
         <View style={{ marginTop: 28 }}>
@@ -174,20 +296,6 @@ export default function Today() {
           )}
         </View>
       </ScrollView>
-
-      <View
-        style={{
-          position: 'absolute',
-          right: 20,
-          bottom: insets.bottom + 80,
-          shadowColor: '#000',
-          shadowOpacity: 0.25,
-          shadowRadius: 12,
-          shadowOffset: { width: 0, height: 4 },
-        }}
-      >
-        <Button label="Log food" size="lg" onPress={() => router.push('/log/search')} />
-      </View>
     </View>
   );
 }

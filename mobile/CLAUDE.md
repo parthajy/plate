@@ -102,7 +102,7 @@ Never call `fetch` directly outside `lib/api.ts`.
 
 ## Navigation rules
 
-- Expo Router file-based. The path *is* the route.
+- Expo Router file-based. The path _is_ the route.
 - Group routes with `(group)` folders for layouts that don't show in the URL.
 - Use `<Link>` for navigation. Programmatic: `router.push(...)`.
 - Tabs persist scroll state — don't unmount them on switch.

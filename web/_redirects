@@ -1,0 +1,20 @@
+# Pretty URLs — let visitors hit /privacy and get privacy.html.
+# Netlify reads this file automatically.
+
+/privacy        /privacy.html       200
+/terms          /terms.html         200
+/help           /help.html          200
+/about          /about.html         200
+/manifesto      /manifesto.html     200
+/careers        /careers.html       200
+
+# Strip trailing slash on the prettied paths so canonical URLs match.
+/privacy/       /privacy.html       200
+/terms/         /terms.html         200
+/help/          /help.html          200
+/about/         /about.html         200
+/manifesto/     /manifesto.html     200
+/careers/       /careers.html       200
+
+# Catch-all: anything we don't recognize serves the 404 page with a real 404 status.
+/*              /404.html           404

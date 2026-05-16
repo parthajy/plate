@@ -1,50 +1,28 @@
 import type { FastifyInstance } from 'fastify';
 import { eq, and, isNull } from 'drizzle-orm';
-import { LoginSchema, RefreshSchema, SignupSchema } from '@plate/shared';
+import {
+  AppleSignInSchema,
+  GoogleSignInSchema,
+  LoginSchema,
+  OtpRequestSchema,
+  OtpVerifySchema,
+  RefreshSchema,
+  SignupSchema,
+} from '@plate/shared';
 import { db } from '../db/client.js';
 import { refreshTokens, users } from '../db/schema.js';
 import { AppError, UnauthorizedError } from '../lib/errors.js';
 import {
   hashPassword,
   hashRefreshToken,
-  newRefreshTokenId,
-  signAccessToken,
-  signRefreshToken,
-  tokens,
+  issueTokens,
   verifyPassword,
   verifyRefreshToken,
 } from '../services/auth.js';
-
-interface IssuedTokens {
-  accessToken: string;
-  refreshToken: string;
-  accessExpiresAt: string;
-  refreshExpiresAt: string;
-}
-
-async function issueTokens(userId: string, email: string): Promise<IssuedTokens> {
-  const jti = newRefreshTokenId();
-  const [accessToken, refreshToken] = await Promise.all([
-    signAccessToken({ sub: userId, email }),
-    signRefreshToken({ sub: userId, jti }),
-  ]);
-  const now = Date.now();
-  const refreshExpiresAt = new Date(now + tokens.refreshTtlSeconds * 1000);
-
-  await db.insert(refreshTokens).values({
-    id: jti,
-    userId,
-    tokenHash: hashRefreshToken(refreshToken),
-    expiresAt: refreshExpiresAt,
-  });
-
-  return {
-    accessToken,
-    refreshToken,
-    accessExpiresAt: new Date(now + tokens.accessTtlSeconds * 1000).toISOString(),
-    refreshExpiresAt: refreshExpiresAt.toISOString(),
-  };
-}
+import { requestOtp, verifyOtp } from '../services/otp.js';
+import { signInWithGoogle } from '../services/oauth/google.js';
+import { signInWithApple } from '../services/oauth/apple.js';
+import { emailKey, ipKey, limits, rateLimit } from '../lib/ratelimit.js';
 
 export async function authRoutes(fastify: FastifyInstance): Promise<void> {
   fastify.post('/signup', async (req, reply) => {
@@ -139,6 +117,41 @@ export async function authRoutes(fastify: FastifyInstance): Promise<void> {
 
     const issued = await issueTokens(u.id, u.email);
     return reply.send(issued);
+  });
+
+  fastify.post('/request-otp', async (req, reply) => {
+    const body = OtpRequestSchema.parse(req.body);
+    // Two limits: per-IP (protects against spray) and per-email (protects the
+    // inbox owner from being spammed by our service).
+    await rateLimit(ipKey(req.ip), limits.authRequestOtpPerIp);
+    await rateLimit(emailKey(body.email), limits.authRequestOtpPerEmail);
+    await requestOtp(body.email);
+    // 202 — accepted; we don't reveal whether the email exists in our DB.
+    return reply.code(202).send({ ok: true });
+  });
+
+  fastify.post('/verify-otp', async (req, reply) => {
+    const body = OtpVerifySchema.parse(req.body);
+    await rateLimit(emailKey(body.email), limits.authVerifyOtpPerEmail);
+    const result = await verifyOtp(body.email, body.code);
+    return reply.send({ tokens: result.tokens, isNewUser: result.isNewUser });
+  });
+
+  fastify.post('/google', async (req, reply) => {
+    const body = GoogleSignInSchema.parse(req.body);
+    await rateLimit(ipKey(req.ip), limits.oauthExchangePerIp);
+    const result = await signInWithGoogle(body.idToken);
+    return reply.send({ tokens: result.tokens, isNewUser: result.isNewUser });
+  });
+
+  fastify.post('/apple', async (req, reply) => {
+    const body = AppleSignInSchema.parse(req.body);
+    await rateLimit(ipKey(req.ip), limits.oauthExchangePerIp);
+    const result = await signInWithApple(body.identityToken, {
+      givenName: body.givenName,
+      familyName: body.familyName,
+    });
+    return reply.send({ tokens: result.tokens, isNewUser: result.isNewUser });
   });
 
   fastify.post('/logout', async (req, reply) => {

@@ -1,0 +1,963 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#0b0b0a" />
+    <title>Plate — Eat smart. Lift heavier. Run further.</title>
+    <meta
+      name="description"
+      content="Plate is a fitness and nutrition app with AI food scanning, an AI coach who knows your training and goals, and pantry-to-recipe generation. Built for people who actually move — gym 3x/week, weekend runs, sport on Sundays."
+    />
+    <meta
+      name="keywords"
+      content="calorie tracker, nutrition app, AI food scan, macro tracker, AI fitness coach, recipe generator, MyFitnessPal alternative"
+    />
+    <meta name="author" content="Plate Labs" />
+    <link rel="canonical" href="https://plate.best/" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:site_name" content="Plate" />
+    <meta property="og:url" content="https://plate.best/" />
+    <meta property="og:title" content="Plate — Eat smart. Lift heavier. Run further." />
+    <meta
+      property="og:description"
+      content="Daily nutrition + AI coach in one app. Built for people who actually move."
+    />
+    <meta property="og:image" content="https://plate.best/assets/og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta name="twitter:card" content="summary_large_image" />
+    <meta name="twitter:title" content="Plate — Eat smart. Lift heavier. Run further." />
+    <meta name="twitter:description" content="Daily nutrition + AI coach in one app." />
+    <meta name="twitter:image" content="https://plate.best/assets/og-image.png" />
+
+    <link rel="icon" type="image/png" href="assets/favicon.png" />
+    <link rel="apple-touch-icon" href="assets/favicon.png" />
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;1,9..144,400;1,9..144,500&family=Geist:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap"
+      rel="stylesheet"
+    />
+    <link rel="stylesheet" href="styles.css" />
+
+    <!-- JSON-LD: Organization -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "Organization",
+        "name": "Plate",
+        "legalName": "Plate Labs",
+        "url": "https://plate.best",
+        "logo": "https://plate.best/assets/logo.png",
+        "email": "hello@plate.best",
+        "description": "A fitness + nutrition app with AI food scanning, an AI coach, and pantry-to-recipe generation.",
+        "foundingDate": "2026",
+        "contactPoint": {
+          "@type": "ContactPoint",
+          "email": "hello@plate.best",
+          "contactType": "customer support"
+        }
+      }
+    </script>
+
+    <!-- JSON-LD: MobileApplication -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "MobileApplication",
+        "name": "Plate",
+        "applicationCategory": "HealthApplication",
+        "operatingSystem": "iOS, Android",
+        "description": "Three-second food logging, AI scan, and Coach Kai — an AI coach that knows your training, meals, and goals.",
+        "url": "https://plate.best",
+        "author": { "@type": "Organization", "name": "Plate Labs" },
+        "offers": [
+          { "@type": "Offer", "name": "Free", "price": "0", "priceCurrency": "USD" },
+          {
+            "@type": "Offer",
+            "name": "Pro Monthly",
+            "price": "9.99",
+            "priceCurrency": "USD",
+            "billingDuration": "P1M"
+          },
+          {
+            "@type": "Offer",
+            "name": "Pro Annual",
+            "price": "69.99",
+            "priceCurrency": "USD",
+            "billingDuration": "P1Y"
+          }
+        ]
+      }
+    </script>
+
+    <!-- JSON-LD: FAQPage (mirrors the FAQ section below) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "FAQPage",
+        "mainEntity": [
+          {
+            "@type": "Question",
+            "name": "Is this just MyFitnessPal with AI on top?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "No. Plate is built for people training 3-5x/week — the database, the macros, the coach all assume you actually move. The AI is the connective tissue, not the marketing."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "How accurate is the food scan?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Median match confidence is 94% on home-plated meals. Below 75%, the app tells you it isn't sure and asks you to adjust the portion."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What does Coach Kai actually do?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Reads your food log, training history, weight trend, and goals. Suggests meals, calls out gaps, plans your week. Built on Anthropic's Claude — tuned for honest, useful nutrition coaching."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Does it work on Android?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "Yes — feature-identical on iOS and Android."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "Can I export my data?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "CSV export of every meal, workout, and weight entry, anytime. Your data, your choice."
+            }
+          },
+          {
+            "@type": "Question",
+            "name": "What about privacy?",
+            "acceptedAnswer": {
+              "@type": "Answer",
+              "text": "We don't sell your data and never will. Food photos are stored privately, not shared. Full details on the Privacy page."
+            }
+          }
+        ]
+      }
+    </script>
+
+    <!-- JSON-LD: WebSite -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Plate",
+        "url": "https://plate.best",
+        "publisher": { "@type": "Organization", "name": "Plate Labs" }
+      }
+    </script>
+
+    <!-- Google Analytics 4 -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-WFKSVZGZ1S"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+      gtag('config', 'G-WFKSVZGZ1S');
+    </script>
+  </head>
+  <body>
+    <!-- ============= NAV ============= -->
+    <nav class="lp-nav">
+      <div class="lp-nav-inner">
+        <a href="/" class="brand">
+          <img src="assets/logo.png" alt="" />
+          <span>Plate</span>
+        </a>
+        <div class="lp-nav-links">
+          <a href="#scan">Scan</a>
+          <a href="#coach">Coach</a>
+          <a href="#pantry">Recipes</a>
+          <a href="#pricing">Pricing</a>
+          <a href="#faq">FAQ</a>
+        </div>
+        <a href="#pricing" class="lp-cta">Get the app →</a>
+      </div>
+    </nav>
+
+    <!-- ============= HERO ============= -->
+    <section class="lp-hero">
+      <div class="lp-hero-grid">
+        <div>
+          <div class="lp-eyebrow"><span class="dot"></span>Plate · v1.0 · iOS &amp; Android</div>
+          <h1>
+            Eat <em>smart</em>.<br />
+            Lift heavier.<br />
+            Run further.
+          </h1>
+          <p class="sub">
+            Your daily nutrition
+            <em style="font-family: var(--display); color: var(--accent)">+</em> AI coach in one app
+            — built for people who actually move, not for spreadsheet athletes.
+          </p>
+          <div class="lp-hero-buttons">
+            <a href="#pricing" class="lp-btn-primary">
+              <svg
+                width="16"
+                height="19"
+                viewBox="0 0 24 24"
+                fill="currentColor"
+                aria-hidden="true"
+              >
+                <path
+                  d="M17.2 13.4 c0 -2.6 2.1 -3.8 2.2 -3.9 c-1.2 -1.7 -3 -2 -3.7 -2 c-1.6 -0.2 -3 0.9 -3.8 0.9 c-0.8 0 -2 -0.9 -3.3 -0.9 c-1.7 0 -3.3 1 -4.2 2.5 c-1.8 3.1 -0.5 7.7 1.3 10.3 c0.9 1.2 1.9 2.6 3.3 2.5 c1.3 -0.1 1.8 -0.8 3.4 -0.8 c1.6 0 2.1 0.8 3.4 0.8 c1.4 0 2.3 -1.2 3.2 -2.5 c1 -1.4 1.4 -2.8 1.5 -2.9 c-0.1 0 -2.9 -1.1 -2.9 -4.4 z M14.6 5.7 c0.7 -0.9 1.2 -2.1 1.1 -3.4 c-1 0 -2.3 0.7 -3 1.5 c-0.7 0.8 -1.3 2 -1.1 3.2 c1.2 0.1 2.4 -0.6 3 -1.3 z"
+                />
+              </svg>
+              <span>Download for iOS</span>
+            </a>
+            <a href="#pricing" class="lp-btn-ghost">
+              <svg width="16" height="18" viewBox="0 0 24 24" aria-hidden="true">
+                <path
+                  d="M3.6 2.3 C3.3 2.6 3.1 3.1 3.1 3.7 v16.6 c0 0.6 0.2 1.1 0.5 1.4 l0.1 0.1 l9.3 -9.3 v -0.2 L3.6 2.3 z"
+                  fill="#4DB6AC"
+                />
+                <path
+                  d="M16.1 15.7 L13 12.6 v -0.2 L16.1 9.3 l0.1 0 l3.7 2.1 c1 0.6 1 1.6 0 2.2 L16.1 15.7 z"
+                  fill="#FBC02D"
+                />
+                <path
+                  d="M16.2 15.6 L13 12.5 L3.6 21.8 c0.3 0.4 0.9 0.4 1.5 0.1 L16.2 15.6"
+                  fill="#EF5350"
+                />
+                <path
+                  d="M16.2 9.4 L5.1 3.1 c -0.7 -0.4 -1.2 -0.3 -1.5 0.1 L13 12.5 L16.2 9.4 z"
+                  fill="#7CB342"
+                />
+              </svg>
+              <span>Get it on Google Play</span>
+            </a>
+          </div>
+          <div class="lp-stores">
+            <span>14-day free trial</span>
+            <span class="ssep"></span>
+            <span>No credit card</span>
+            <span class="ssep"></span>
+            <span>Cancel anytime</span>
+          </div>
+        </div>
+
+        <!-- Hero phone cluster -->
+        <div class="hero-phones">
+          <!-- Back left — Scan -->
+          <div class="phone-pos p-back-l">
+            <div class="phone">
+              <div class="phone-screen">
+                <div class="notch"></div>
+                <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+                <div class="mock-scan">
+                  <div class="scan-top">
+                    <span class="title">Point. <em>Done</em>.</span>
+                    <span class="pill">Analyzing · 94%</span>
+                  </div>
+                  <div class="viewfinder">
+                    <span class="c-tr"></span><span class="c-bl"></span>
+                    <div class="plate-illus"></div>
+                  </div>
+                  <div class="scan-tag">Chicken · rice · broccoli</div>
+                </div>
+                <div class="home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Back right — Coach -->
+          <div class="phone-pos p-back-r">
+            <div class="phone">
+              <div class="phone-screen">
+                <div class="notch"></div>
+                <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+                <div class="mock-coach">
+                  <div class="coach-head">
+                    <div class="ava">K</div>
+                    <div>
+                      <div class="name">Coach Kai</div>
+                      <div class="status">Online · knows your history</div>
+                    </div>
+                  </div>
+                  <div class="bubble">
+                    You crushed legs yesterday — <em>18 working sets</em>, PR on squat. Recovery's
+                    solid.
+                  </div>
+                  <div class="bubble">
+                    Heads up — you're <em>52g protein</em> short for today's target. Want me to slot
+                    a meal?
+                  </div>
+                  <div class="bubble user">yeah, something quick</div>
+                  <div class="bubble">
+                    Greek yogurt + 30g whey + frozen berries. 42g protein, 380 kcal,
+                    <em>90 seconds</em>.
+                  </div>
+                </div>
+                <div class="home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Front — Today -->
+          <div class="phone-pos p-front">
+            <div class="phone">
+              <div class="phone-screen">
+                <div class="notch"></div>
+                <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+                <div class="mock-today screen-pad">
+                  <div class="stamp">Wed · Nov 19</div>
+                  <div class="greet">Afternoon, Alex.</div>
+                  <div class="calorie-ring">
+                    <svg viewBox="0 0 100 100">
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="44"
+                        fill="none"
+                        stroke="#1d1c19"
+                        stroke-width="8"
+                      />
+                      <circle
+                        cx="50"
+                        cy="50"
+                        r="44"
+                        fill="none"
+                        stroke="#dcff4f"
+                        stroke-width="8"
+                        stroke-dasharray="276.5"
+                        stroke-dashoffset="113"
+                        stroke-linecap="round"
+                        transform="rotate(-90 50 50)"
+                      />
+                    </svg>
+                    <div class="label">
+                      <span class="n">1,247</span>
+                      <span class="l">of 2,400 kcal</span>
+                    </div>
+                  </div>
+                </div>
+                <div class="macro-card">
+                  <div class="macro-cell">
+                    <div class="ml">Protein</div>
+                    <div class="mn">
+                      128<span style="font-size: 11px; color: var(--text-3)"> / 180g</span>
+                    </div>
+                    <div class="mb"><div style="width: 71%; background: var(--accent)"></div></div>
+                  </div>
+                  <div class="macro-cell">
+                    <div class="ml">Carbs</div>
+                    <div class="mn">
+                      142<span style="font-size: 11px; color: var(--text-3)"> / 260g</span>
+                    </div>
+                    <div class="mb">
+                      <div style="width: 55%; background: var(--accent-2)"></div>
+                    </div>
+                  </div>
+                  <div class="macro-cell">
+                    <div class="ml">Fat</div>
+                    <div class="mn">
+                      38<span style="font-size: 11px; color: var(--text-3)"> / 70g</span>
+                    </div>
+                    <div class="mb"><div style="width: 54%; background: var(--amber)"></div></div>
+                  </div>
+                </div>
+                <div class="home-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Callouts -->
+          <div class="hero-callout" style="top: 60px; left: -10px">AI scan · 94%</div>
+          <div class="hero-callout" style="bottom: 110px; right: -20px">
+            Coach knows<br />yesterday's session
+          </div>
+          <div class="hero-callout" style="top: 280px; left: -20px">1,153 kcal left</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= MARQUEE ============= -->
+    <div class="lp-marquee">
+      <div class="lp-marquee-track">
+        <span>Eat smart.</span><span class="dot"></span> <span>Lift heavier.</span
+        ><span class="dot"></span> <span>Run further.</span><span class="dot"></span>
+        <span>Repeat.</span><span class="dot"></span> <span>No purple gradients.</span
+        ><span class="dot"></span> <span>No badges to chase.</span><span class="dot"></span>
+        <span>Eat smart.</span><span class="dot"></span> <span>Lift heavier.</span
+        ><span class="dot"></span> <span>Run further.</span><span class="dot"></span>
+        <span>Repeat.</span><span class="dot"></span> <span>No purple gradients.</span
+        ><span class="dot"></span> <span>No badges to chase.</span><span class="dot"></span>
+      </div>
+    </div>
+
+    <!-- ============= FEATURE 1 — AI SCAN ============= -->
+    <section id="scan" class="lp-section">
+      <div class="feature-split">
+        <div>
+          <div class="lp-eyebrow"><span class="dot"></span>Feature 01 · AI scan</div>
+          <h2 class="lp-h2">Point. <em>Done</em>.</h2>
+          <p class="lp-lede">
+            Stop weighing pasta. Aim your camera at the plate — Plate identifies the food, estimates
+            the portion, and gives you calories and macros in under a second.
+          </p>
+          <div class="feature-bullets">
+            <div class="feature-bullet">
+              <span class="bnum">01</span>
+              <div>
+                <div class="btitle"><em>Sees what you ate</em>, not just a label.</div>
+                <div class="bbody">
+                  Powered by Claude's vision model. Knows that "chicken and rice" is three macros,
+                  not one.
+                </div>
+              </div>
+            </div>
+            <div class="feature-bullet">
+              <span class="bnum">02</span>
+              <div>
+                <div class="btitle">Honest about <em>uncertainty</em>.</div>
+                <div class="bbody">
+                  94% match? It commits. 62%? It asks. No false-confidence numbers logged to your
+                  week.
+                </div>
+              </div>
+            </div>
+            <div class="feature-bullet">
+              <span class="bnum">03</span>
+              <div>
+                <div class="btitle">Manual search &amp; custom entries, too.</div>
+                <div class="bbody">
+                  When the camera isn't right — a packaged snack, a takeout entry — fall back to
+                  typing in seconds.
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+        <div class="feature-vis">
+          <div class="phone" style="transform: rotate(-1.5deg)">
+            <div class="phone-screen">
+              <div class="notch"></div>
+              <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+              <div class="mock-scan">
+                <div class="scan-top">
+                  <span class="title">Point. <em>Done</em>.</span>
+                  <span class="pill">Analyzing · 94%</span>
+                </div>
+                <div class="viewfinder">
+                  <span class="c-tr"></span><span class="c-bl"></span>
+                  <div class="plate-illus"></div>
+                </div>
+                <div class="scan-tag">Chicken · rice · broccoli</div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FEATURE 2 — COACH KAI ============= -->
+    <section id="coach" class="lp-section">
+      <div class="feature-split reverse">
+        <div>
+          <div class="lp-eyebrow"><span class="dot"></span>Feature 02 · Coach Kai</div>
+          <h2 class="lp-h2">An AI coach with <em>context</em>.</h2>
+          <p class="lp-lede">
+            Kai sees your training, your meals, your goals — not just today's chat. It remembers
+            that you trained legs yesterday and that your protein is low. Suggests the next move
+            accordingly.
+          </p>
+
+          <div class="mini-coach">
+            <div class="mini-coach-head">
+              <div
+                class="ava"
+                style="
+                  width: 28px;
+                  height: 28px;
+                  border-radius: 50%;
+                  background: radial-gradient(circle at 30% 30%, #f4ff8c, #dcff4f 50%, #a7c63a);
+                  color: #0b0b0a;
+                  display: flex;
+                  align-items: center;
+                  justify-content: center;
+                  font-family: var(--display);
+                  font-style: italic;
+                  font-size: 14px;
+                "
+              >
+                K
+              </div>
+              <div>
+                <div style="font-family: var(--display); font-size: 14px; line-height: 1">
+                  Coach Kai
+                </div>
+                <div
+                  style="
+                    font-family: var(--mono);
+                    font-size: 9px;
+                    color: var(--text-2);
+                    text-transform: uppercase;
+                    letter-spacing: 0.12em;
+                    margin-top: 4px;
+                  "
+                >
+                  <span
+                    style="
+                      display: inline-block;
+                      width: 5px;
+                      height: 5px;
+                      border-radius: 50%;
+                      background: var(--good);
+                      margin-right: 5px;
+                    "
+                  ></span
+                  >Online
+                </div>
+              </div>
+            </div>
+            <div class="bubble">
+              You crushed legs yesterday — <em>18 working sets</em>, PR on squat. You're
+              <span style="color: var(--accent)">52g protein</span> short today. Want me to slot a
+              meal?
+            </div>
+            <div class="bubble user">yeah, something quick</div>
+            <div class="bubble">
+              Greek yogurt + 30g whey + frozen berries. 42g protein, 380 kcal, <em>90 seconds</em>.
+            </div>
+          </div>
+
+          <blockquote class="lp-pullquote">
+            "It noticed I was under-eating on lifting days before <em>I</em> did."
+            <span class="lp-pullquote-attr">— Marcus K., beta user</span>
+          </blockquote>
+        </div>
+
+        <div class="feature-vis">
+          <div class="phone" style="transform: rotate(1.5deg)">
+            <div class="phone-screen">
+              <div class="notch"></div>
+              <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+              <div class="mock-coach">
+                <div class="coach-head">
+                  <div class="ava">K</div>
+                  <div>
+                    <div class="name">Coach Kai</div>
+                    <div class="status">Online · knows your history</div>
+                  </div>
+                </div>
+                <div class="bubble">
+                  Morning. You crushed legs yesterday — <em>18 working sets</em>, PR on squat.
+                  Recovery's solid.
+                </div>
+                <div class="bubble">
+                  Heads up — you're <em>52g protein</em> short for today's target. Want me to slot a
+                  meal?
+                </div>
+                <div class="bubble user">yeah, something quick</div>
+                <div class="bubble">
+                  Greek yogurt + 30g whey + frozen berries. 42g protein, 380 kcal.
+                </div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FEATURE 3 — PANTRY → RECIPE ============= -->
+    <section id="pantry" class="lp-section">
+      <div style="max-width: 760px">
+        <div class="lp-eyebrow"><span class="dot"></span>Feature 03 · Pantry → recipe</div>
+        <h2 class="lp-h2">From <em>fridge</em> to plate, in three taps.</h2>
+        <p class="lp-lede">
+          Tell Plate what's in the kitchen. It writes a recipe that hits your macros and uses what
+          you already own. Walks you through cooking it, step by step.
+        </p>
+      </div>
+      <div class="flow-3up">
+        <div class="flow-item">
+          <div class="flow-num">01 / Pantry</div>
+          <div class="phone" style="transform: scale(0.92)">
+            <div class="phone-screen">
+              <div class="notch"></div>
+              <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+              <div class="mock-pantry">
+                <h3>Got these. Make me <em>something</em>.</h3>
+                <div class="sub">12 ingredients on hand. Tap one to remove.</div>
+                <div class="chip-grid">
+                  <span class="p-chip">🍗 Chicken</span>
+                  <span class="p-chip">🍚 Rice</span>
+                  <span class="p-chip">🥦 Broccoli</span>
+                  <span class="p-chip">🧄 Garlic</span>
+                  <span class="p-chip">🥚 Eggs</span>
+                  <span class="p-chip">🧅 Onion</span>
+                  <span class="p-chip">🌶️ Chili</span>
+                  <span class="p-chip">🍋 Lemon</span>
+                  <span class="p-chip">🥑 Avocado</span>
+                  <span class="p-chip">🧀 Cheese</span>
+                  <span class="p-chip ghost">+ Add</span>
+                </div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+          <h4 class="flow-title">What you <em>have</em>.</h4>
+          <p class="flow-desc">12 ingredients. Filters for time, macros, dietary needs.</p>
+          <span class="flow-arrow">→</span>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">02 / Generate</div>
+          <div class="phone" style="transform: scale(0.92)">
+            <div class="phone-screen">
+              <div class="notch"></div>
+              <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+              <div class="mock-recipe">
+                <div class="r-meta">Recipe · generated</div>
+                <h3>Garlic-chili chicken rice bowl</h3>
+                <div class="r-row">
+                  <span>24 min</span><span class="v">38g · P</span><span>520 kcal</span>
+                </div>
+                <div class="steps">
+                  <div class="step">
+                    <span class="sn">01</span
+                    ><span>Marinate chicken in garlic, chili &amp; oil for 10 min.</span>
+                  </div>
+                  <div class="step">
+                    <span class="sn">02</span
+                    ><span>Cook rice. Steam broccoli till bright green.</span>
+                  </div>
+                  <div class="step">
+                    <span class="sn">03</span
+                    ><span>Sear chicken hot, 3 min per side. Rest 2 min.</span>
+                  </div>
+                  <div class="step">
+                    <span class="sn">04</span><span>Slice, plate, squeeze lemon. Eat.</span>
+                  </div>
+                </div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+          <h4 class="flow-title">What you <em>could</em> make.</h4>
+          <p class="flow-desc">24-min, 38g protein, uses 4 of 12. Logged automatically.</p>
+          <span class="flow-arrow">→</span>
+        </div>
+        <div class="flow-item">
+          <div class="flow-num">03 / Cook</div>
+          <div class="phone" style="transform: scale(0.92)">
+            <div class="phone-screen">
+              <div class="notch"></div>
+              <div class="status-bar"><span>9:41</span><span class="right">●●●</span></div>
+              <div class="mock-cook">
+                <div class="step-no">Step 3 of 5</div>
+                <div class="step-text">
+                  Sear chicken in a hot pan, 3 min per side. Don't crowd it.
+                </div>
+                <div class="cook-timer">02:14</div>
+              </div>
+              <div class="home-indicator"></div>
+            </div>
+          </div>
+          <h4 class="flow-title">How to <em>cook</em> it.</h4>
+          <p class="flow-desc">One step at a time. Built-in timers. No scrolling mid-sear.</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= NUMBERS ============= -->
+    <section class="lp-section tight" style="padding: 0">
+      <div class="lp-numbers">
+        <div class="lp-num-cell">
+          <div class="nl">Avg log time</div>
+          <div class="nv"><em>12s</em></div>
+          <div class="nd">From open to logged. Faster than typing the food name.</div>
+        </div>
+        <div class="lp-num-cell">
+          <div class="nl">Scan accuracy</div>
+          <div class="nv">94<span style="font-size: 40px; color: var(--text-3)">%</span></div>
+          <div class="nd">Median match confidence on home-plated meals. Hedges when unsure.</div>
+        </div>
+        <div class="lp-num-cell">
+          <div class="nl">Food database</div>
+          <div class="nv">800<span style="font-size: 40px; color: var(--text-3)">k</span></div>
+          <div class="nd">Branded items, restaurant entries, raw foods. Updated weekly.</div>
+        </div>
+        <div class="lp-num-cell">
+          <div class="nl">Activities tracked</div>
+          <div class="nv">40<span style="font-size: 40px; color: var(--text-3)">+</span></div>
+          <div class="nd">Gym, run, swim, ride, sports — and whatever else you do.</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= ANTI-TROPES ============= -->
+    <section class="lp-section">
+      <div class="anti-grid">
+        <div>
+          <div class="lp-eyebrow"><span class="dot"></span>Our anti-roadmap</div>
+          <h2 class="lp-h2">What Plate <em>isn't</em>.</h2>
+          <p class="lp-lede">
+            A discipline of restraint. Every feature we don't build is a feature you don't have to
+            ignore.
+          </p>
+        </div>
+        <div class="anti-list">
+          <div class="anti-row">
+            <span class="no">Streak shame</span>
+            <span class="yes">Honest weekly averages</span>
+          </div>
+          <div class="anti-row">
+            <span class="no">Celebratory confetti</span>
+            <span class="yes">A nod, then keep moving</span>
+          </div>
+          <div class="anti-row">
+            <span class="no">Badges &amp; XP</span>
+            <span class="yes">Numbers that mean something</span>
+          </div>
+          <div class="anti-row">
+            <span class="no">Coach that just cheerleads</span>
+            <span class="yes">Coach that disagrees with you</span>
+          </div>
+          <div class="anti-row">
+            <span class="no">Purple-gradient SaaS aesthetic</span>
+            <span class="yes">Editorial dark, warm cream</span>
+          </div>
+          <div class="anti-row">
+            <span class="no">Spreadsheets dressed as an app</span>
+            <span class="yes">A glanceable today</span>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= PRICING ============= -->
+    <section id="pricing" class="lp-section">
+      <div style="max-width: 760px">
+        <div class="lp-eyebrow"><span class="dot"></span>Pricing</div>
+        <h2 class="lp-h2">Two plans. <em>No upsells</em> mid-meal.</h2>
+        <p class="lp-lede">
+          Free covers the basics, forever. Pro adds the AI — the parts that actually save you time.
+        </p>
+      </div>
+      <div class="pricing-grid">
+        <div class="price-card">
+          <div class="price-name">Free</div>
+          <div class="price-tag">Forever</div>
+          <div class="price-num">
+            <span class="currency">$</span>
+            <span class="amount">0</span>
+            <span class="per">/ month</span>
+          </div>
+          <div class="price-sub">No card required</div>
+          <ul class="price-feats">
+            <li>Manual food logging</li>
+            <li>Workout logging</li>
+            <li>Today + weight trend</li>
+            <li>Limited AI scan (3/day)</li>
+            <li>Limited coach (10 msgs/day)</li>
+            <li class="muted">No pantry → recipe</li>
+          </ul>
+          <a href="#" class="price-cta">Start free</a>
+        </div>
+
+        <div class="price-card feat">
+          <div class="ptag">Most pick this</div>
+          <div class="price-name">Pro</div>
+          <div class="price-tag">For regulars</div>
+          <div class="price-num">
+            <span class="currency">$</span>
+            <span class="amount">9</span>
+            <span style="font-family: var(--display); font-size: 24px; color: var(--text-2)"
+              >.99</span
+            >
+            <span class="per">/ month</span>
+          </div>
+          <div class="price-sub">$69.99 / year — save 42%</div>
+          <ul class="price-feats">
+            <li>Everything in Free</li>
+            <li><em>AI food scan</em>, 30/day</li>
+            <li>Coach Kai, 50 msgs/day</li>
+            <li>Pantry → recipe, unlimited</li>
+            <li>Lifetime stats &amp; trends</li>
+            <li>Data export (CSV)</li>
+          </ul>
+          <a href="#" class="price-cta">Try 14 days free →</a>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FAQ ============= -->
+    <section id="faq" class="lp-section">
+      <div class="faq">
+        <div>
+          <div class="lp-eyebrow"><span class="dot"></span>FAQ</div>
+          <h2 class="lp-h2">Things <em>we get asked</em>.</h2>
+          <p class="lp-lede">
+            Reach us at
+            <a href="mailto:hello@plate.best" style="color: var(--accent); text-decoration: none"
+              >hello@plate.best</a
+            >
+            — a real human replies within a day.
+          </p>
+        </div>
+        <div class="faq-list">
+          <div class="faq-item">
+            <span class="faq-num">01</span>
+            <div>
+              <h3 class="faq-q">Is this just MyFitnessPal with AI on top?</h3>
+              <p class="faq-a">
+                No. Plate is built for people training 3-5×/week — the database, the macros, the
+                coach all assume you actually move. The AI is the connective tissue, not the
+                marketing.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <span class="faq-num">02</span>
+            <div>
+              <h3 class="faq-q">How accurate is the food scan?</h3>
+              <p class="faq-a">
+                Median match confidence is 94% on home-plated meals. Below 75%, the app says so and
+                asks you to adjust the portion. We'd rather hedge than log a wrong number.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <span class="faq-num">03</span>
+            <div>
+              <h3 class="faq-q">What does Coach Kai actually do?</h3>
+              <p class="faq-a">
+                Reads your food log, training history, weight trend, and goals. Suggests meals,
+                calls out gaps, plans your week. Built on Anthropic's Claude — tuned for honest,
+                useful nutrition coaching.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <span class="faq-num">04</span>
+            <div>
+              <h3 class="faq-q">Does it work on Android?</h3>
+              <p class="faq-a">Yes — feature-identical on iOS and Android.</p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <span class="faq-num">05</span>
+            <div>
+              <h3 class="faq-q">Can I export my data?</h3>
+              <p class="faq-a">
+                CSV export of every meal, workout, and weight entry, anytime. Your data, your
+                choice.
+              </p>
+            </div>
+          </div>
+          <div class="faq-item">
+            <span class="faq-num">06</span>
+            <div>
+              <h3 class="faq-q">What about privacy?</h3>
+              <p class="faq-a">
+                We don't sell your data and never will. Food photos are stored privately, not
+                shared. Full details on the <a href="privacy.html">Privacy page</a>.
+              </p>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============= FINAL CTA ============= -->
+    <section class="lp-final">
+      <div class="lp-eyebrow" style="display: inline-flex; justify-content: center">
+        <span class="dot"></span>Ready when you are
+      </div>
+      <h2>Eat <em>smart</em>.<br />Today.</h2>
+      <p class="sub">Download free. Pro is 14 days free. No card needed to start.</p>
+      <div style="display: flex; gap: 10px; justify-content: center; flex-wrap: wrap">
+        <a href="#" class="lp-btn-primary">
+          <svg width="16" height="19" viewBox="0 0 24 24" fill="currentColor" aria-hidden="true">
+            <path
+              d="M17.2 13.4 c0 -2.6 2.1 -3.8 2.2 -3.9 c-1.2 -1.7 -3 -2 -3.7 -2 c-1.6 -0.2 -3 0.9 -3.8 0.9 c-0.8 0 -2 -0.9 -3.3 -0.9 c-1.7 0 -3.3 1 -4.2 2.5 c-1.8 3.1 -0.5 7.7 1.3 10.3 c0.9 1.2 1.9 2.6 3.3 2.5 c1.3 -0.1 1.8 -0.8 3.4 -0.8 c1.6 0 2.1 0.8 3.4 0.8 c1.4 0 2.3 -1.2 3.2 -2.5 c1 -1.4 1.4 -2.8 1.5 -2.9 c-0.1 0 -2.9 -1.1 -2.9 -4.4 z M14.6 5.7 c0.7 -0.9 1.2 -2.1 1.1 -3.4 c-1 0 -2.3 0.7 -3 1.5 c-0.7 0.8 -1.3 2 -1.1 3.2 c1.2 0.1 2.4 -0.6 3 -1.3 z"
+            />
+          </svg>
+          <span>Download for iOS</span>
+        </a>
+        <a href="#" class="lp-btn-ghost">
+          <svg width="16" height="18" viewBox="0 0 24 24" aria-hidden="true">
+            <path
+              d="M3.6 2.3 C3.3 2.6 3.1 3.1 3.1 3.7 v16.6 c0 0.6 0.2 1.1 0.5 1.4 l0.1 0.1 l9.3 -9.3 v -0.2 L3.6 2.3 z"
+              fill="#4DB6AC"
+            />
+            <path
+              d="M16.1 15.7 L13 12.6 v -0.2 L16.1 9.3 l0.1 0 l3.7 2.1 c1 0.6 1 1.6 0 2.2 L16.1 15.7 z"
+              fill="#FBC02D"
+            />
+            <path
+              d="M16.2 15.6 L13 12.5 L3.6 21.8 c0.3 0.4 0.9 0.4 1.5 0.1 L16.2 15.6"
+              fill="#EF5350"
+            />
+            <path
+              d="M16.2 9.4 L5.1 3.1 c -0.7 -0.4 -1.2 -0.3 -1.5 0.1 L13 12.5 L16.2 9.4 z"
+              fill="#7CB342"
+            />
+          </svg>
+          <span>Get it on Google Play</span>
+        </a>
+      </div>
+    </section>
+
+    <!-- ============= FOOTER ============= -->
+    <footer class="lp-footer">
+      <div class="lp-footer-brand">
+        <span class="brand-row">
+          <img src="assets/logo.png" alt="" />
+          <span>Plate</span>
+        </span>
+        <span class="tag"><a href="mailto:hello@plate.best">hello@plate.best</a></span>
+      </div>
+      <div class="lp-footer-col">
+        <h4>Product</h4>
+        <ul>
+          <li><a href="#scan">AI Scan</a></li>
+          <li><a href="#coach">Coach Kai</a></li>
+          <li><a href="#pantry">Recipes</a></li>
+          <li><a href="#pricing">Pricing</a></li>
+        </ul>
+      </div>
+      <div class="lp-footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="about.html">About</a></li>
+          <li><a href="manifesto.html">Manifesto</a></li>
+          <li><a href="careers.html">Careers</a></li>
+          <li><a href="mailto:hello@plate.best">Contact</a></li>
+        </ul>
+      </div>
+      <div class="lp-footer-col">
+        <h4>Resources</h4>
+        <ul>
+          <li><a href="help.html">Help center</a></li>
+          <li><a href="privacy.html">Privacy</a></li>
+          <li><a href="terms.html">Terms</a></li>
+        </ul>
+      </div>
+    </footer>
+    <div class="lp-footer-legal">
+      <span>© 2026 Plate Labs</span>
+      <span><a href="mailto:hello@plate.best">hello@plate.best</a></span>
+    </div>
+  </body>
+</html>

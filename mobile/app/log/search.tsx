@@ -139,7 +139,6 @@ export default function SearchScreen() {
         <FlashList
           data={data?.items ?? []}
           keyExtractor={(item) => item.id}
-          estimatedItemSize={68}
           contentContainerStyle={{ paddingHorizontal: 20, paddingBottom: insets.bottom + 32 }}
           renderItem={({ item }) => (
             <Pressable

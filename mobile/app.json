@@ -11,12 +11,16 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "best.plate.app",
+      "usesAppleSignIn": true,
       "infoPlist": {
-        "UIBackgroundColor": "#0b0b0a"
+        "UIBackgroundColor": "#0b0b0a",
+        "NSCameraUsageDescription": "Plate uses your camera to scan food and estimate calories and macros.",
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
-      "package": "best.plate.app"
+      "package": "best.plate.app",
+      "permissions": ["android.permission.CAMERA", "android.permission.RECORD_AUDIO"]
     },
     "web": {
       "bundler": "metro"
@@ -24,13 +28,27 @@
     "plugins": [
       "expo-router",
       "expo-font",
-      "expo-secure-store"
+      "expo-secure-store",
+      "@react-native-community/datetimepicker",
+      [
+        "expo-camera",
+        {
+          "cameraPermission": "Plate uses your camera to scan food and estimate calories and macros."
+        }
+      ],
+      "expo-web-browser",
+      "expo-apple-authentication"
     ],
     "experiments": {
       "typedRoutes": true
     },
     "extra": {
-      "router": { "origin": false }
+      "router": {
+        "origin": false
+      },
+      "eas": {
+        "projectId": "b102ba0a-8c08-441c-842d-5c6ef4d15b4b"
+      }
     }
   }
 }

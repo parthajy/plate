@@ -1,8 +1,8 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, View } from 'react-native';
+import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Sex } from '@plate/shared';
-import { Input } from '../../components/ui/Input';
 import { OnboardingShell } from '../../components/onboarding/OnboardingShell';
 import { useOnboarding } from '../../stores/onboarding';
 import { colors, radius, type } from '../../lib/theme';
@@ -13,12 +13,42 @@ const OPTIONS: { value: Sex; label: string }[] = [
   { value: 'x', label: 'Other' },
 ];
 
+const DEFAULT_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 28);
+  return d;
+})();
+
+const MIN_DOB = new Date(1920, 0, 1);
+const MAX_DOB = (() => {
+  const d = new Date();
+  d.setFullYear(d.getFullYear() - 13);
+  return d;
+})();
+
+function toIsoDate(d: Date): string {
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+
+function fmtDob(d: Date): string {
+  return d.toLocaleDateString(undefined, {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric',
+  });
+}
+
 export default function SexScreen() {
   const router = useRouter();
   const draft = useOnboarding();
   const [sex, setSex] = useState<Sex | undefined>(draft.sex);
-  const [birthdate, setBirthdate] = useState<string>(draft.birthdate ?? '');
-  const valid = !!sex && /^\d{4}-\d{2}-\d{2}$/.test(birthdate);
+  const [dob, setDob] = useState<Date | null>(draft.birthdate ? new Date(draft.birthdate) : null);
+  const [pickerOpen, setPickerOpen] = useState(false);
+
+  const valid = !!sex && !!dob;
 
   return (
     <OnboardingShell
@@ -33,8 +63,8 @@ export default function SexScreen() {
       subtitle="We use this to calculate your resting metabolic rate."
       primaryDisabled={!valid}
       onPrimary={() => {
-        if (!sex) return;
-        draft.set({ sex, birthdate });
+        if (!sex || !dob) return;
+        draft.set({ sex, birthdate: toIsoDate(dob) });
         router.push('/(onboarding)/measurements');
       }}
     >
@@ -69,17 +99,90 @@ export default function SexScreen() {
         ))}
       </View>
 
-      <View style={{ marginTop: 24 }}>
-        <Input
-          label="Birthdate"
-          value={birthdate}
-          onChangeText={setBirthdate}
-          placeholder="YYYY-MM-DD"
-          autoCapitalize="none"
-          autoCorrect={false}
-          keyboardType="numbers-and-punctuation"
-          hint="Used only for age in the BMR calculation."
-        />
+      <View style={{ marginTop: 28 }}>
+        <Text
+          style={{
+            ...type.label,
+            color: colors.text2,
+            marginBottom: 8,
+          }}
+        >
+          Date of birth
+        </Text>
+
+        <Pressable
+          onPress={() => setPickerOpen((v) => !v)}
+          style={{
+            height: 56,
+            borderRadius: radius.lg,
+            paddingHorizontal: 16,
+            justifyContent: 'center',
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: pickerOpen ? colors.borderHi : colors.border,
+          }}
+          accessibilityRole="button"
+          accessibilityLabel="Pick date of birth"
+        >
+          <Text
+            style={{
+              ...type.body,
+              color: dob ? colors.text : colors.text3,
+            }}
+          >
+            {dob ? fmtDob(dob) : 'Tap to pick'}
+          </Text>
+        </Pressable>
+
+        <Text
+          style={{
+            ...type.bodySm,
+            color: colors.text3,
+            marginTop: 8,
+          }}
+        >
+          Used only for age in the BMR calculation.
+        </Text>
+
+        {pickerOpen && Platform.OS === 'ios' ? (
+          <View
+            style={{
+              marginTop: 12,
+              borderRadius: radius.lg,
+              backgroundColor: colors.surface,
+              borderWidth: 1,
+              borderColor: colors.border,
+              overflow: 'hidden',
+            }}
+          >
+            <DateTimePicker
+              value={dob ?? DEFAULT_DOB}
+              mode="date"
+              display="spinner"
+              themeVariant="dark"
+              minimumDate={MIN_DOB}
+              maximumDate={MAX_DOB}
+              onChange={(_, picked) => {
+                if (picked) setDob(picked);
+              }}
+              style={{ backgroundColor: colors.surface }}
+            />
+          </View>
+        ) : null}
+
+        {pickerOpen && Platform.OS === 'android' ? (
+          <DateTimePicker
+            value={dob ?? DEFAULT_DOB}
+            mode="date"
+            display="calendar"
+            minimumDate={MIN_DOB}
+            maximumDate={MAX_DOB}
+            onChange={(event, picked) => {
+              setPickerOpen(false);
+              if (event.type === 'set' && picked) setDob(picked);
+            }}
+          />
+        ) : null}
       </View>
     </OnboardingShell>
   );

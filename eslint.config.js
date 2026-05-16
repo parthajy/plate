@@ -1,4 +1,5 @@
 import js from '@eslint/js';
+import globals from 'globals';
 import tseslint from 'typescript-eslint';
 import prettier from 'eslint-config-prettier';
 
@@ -26,6 +27,19 @@ export default [
       ],
       '@typescript-eslint/no-explicit-any': 'warn',
       'no-console': ['warn', { allow: ['warn', 'error'] }],
+    },
+  },
+  {
+    // Node-runtime config files (Metro, Tailwind, Babel, etc.). They use
+    // CommonJS and don't go through the bundler, so the browser/ESM globals
+    // and import rules don't apply.
+    files: ['**/*.config.js', '**/*.config.cjs', '**/babel.config.js'],
+    languageOptions: {
+      globals: { ...globals.node },
+      sourceType: 'commonjs',
+    },
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
     },
   },
 ];

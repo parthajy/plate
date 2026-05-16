@@ -1,0 +1,33 @@
+# Plate
+
+> A fitness and nutrition app with AI food scanning, an AI coach, and pantry-to-recipe generation. Built for people who actually move — the gym 3×/week, weekend run, Sunday pickup-sport crowd — not for elite athletes or the wellness-aesthetic market.
+
+Plate is a B2C mobile app available on iOS and Android. Positioning: "MyFitnessPal for people who actually move." Differentiation is three AI features that compound: (1) AI food scan — point the camera at a plate, get calories + macros, (2) Coach Kai — an AI coach that reads your training, meals, and goals to give context-aware advice, (3) pantry → recipe — list what's in your fridge, get a high-protein recipe in seconds.
+
+## Product
+
+- [Landing](https://plate.best/): Product overview, the three AI features, pricing, FAQ.
+- [Pricing](https://plate.best/#pricing): Free (with daily AI limits) or Pro at $9.99/month or $69.99/year. 14-day free trial on Pro.
+
+## Pages
+
+- [About](https://plate.best/about): Who builds Plate, what we believe, how we work.
+- [Help center](https://plate.best/help): Common questions, support categories, contact.
+- [Privacy](https://plate.best/privacy): Plain-English summary plus full policy. We don't sell data and never will.
+- [Terms](https://plate.best/terms): The agreement, subscription terms, refund policy.
+
+## Quick facts
+
+- **Platforms**: iOS, Android.
+- **Pricing**: Free tier with caps (3 scans/day, 1 recipe/day, 10 coach messages/day) and Pro at $9.99/month or $69.99/year for the full limits (30/20/50).
+- **AI provider**: Anthropic's Claude (Sonnet for vision and coach calls).
+- **Auth**: email + 6-digit OTP via Resend, Apple Sign In, Google Sign In.
+- **Data**: never sold. Food photos stored privately, never shared. Full CSV export available. Delete-account is one tap.
+- **Built by**: Plate Labs, a small remote team.
+- **Contact**: hello@plate.best — a real person reads every message.
+
+## What Plate is not
+
+- Not a medical device. Not a substitute for a doctor or registered dietitian.
+- Not for elite endurance athletes (TrainingPeaks fits that).
+- Not a social-feed app. No badges, no streaks-as-shame, no celebratory confetti.

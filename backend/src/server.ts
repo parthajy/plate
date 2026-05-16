@@ -10,6 +10,9 @@ import { healthRoutes } from './routes/health.js';
 import { authRoutes } from './routes/auth.js';
 import { meRoutes } from './routes/me.js';
 import { foodRoutes } from './routes/food.js';
+import { coachRoutes } from './routes/coach.js';
+import { pantryRoutes } from './routes/pantry.js';
+import { workoutRoutes } from './routes/workouts.js';
 import './types.js';
 
 async function build() {
@@ -17,6 +20,9 @@ async function build() {
     logger: loggerOptions,
     trustProxy: true,
     disableRequestLogging: false,
+    // Food-scan uploads arrive as base64 JSON; 8MB headroom covers a
+    // ~6MB raw image after 33% base64 inflation.
+    bodyLimit: 8 * 1024 * 1024,
   });
 
   await fastify.register(helmet, { contentSecurityPolicy: false });
@@ -54,6 +60,9 @@ async function build() {
   await fastify.register(authRoutes, { prefix: '/v1/auth' });
   await fastify.register(meRoutes, { prefix: '/v1/me' });
   await fastify.register(foodRoutes, { prefix: '/v1/food' });
+  await fastify.register(coachRoutes, { prefix: '/v1/coach' });
+  await fastify.register(pantryRoutes, { prefix: '/v1/pantry' });
+  await fastify.register(workoutRoutes, { prefix: '/v1/workouts' });
 
   return fastify;
 }

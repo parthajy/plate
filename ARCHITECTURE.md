@@ -43,6 +43,7 @@ auto-renews SSL via Let's Encrypt.
 - **Cloudflare** in front: free, gives us CDN, DDoS, and analytics
 
 Memory budget at idle:
+
 - Postgres: ~250–400 MB
 - Node + Fastify: ~150–200 MB
 - Caddy: ~30 MB
@@ -56,20 +57,20 @@ Don't optimize prematurely.
 
 ## Backend stack
 
-| Concern | Tool | Notes |
-|---|---|---|
-| Runtime | Node 20 LTS | |
-| Framework | Fastify 4 | Lower overhead than Express, schema-first |
-| Validation | Zod | Shared types with mobile via a `shared/` package |
-| ORM | Drizzle | Type-safe SQL builder. No query engine = low RAM. |
-| DB driver | `postgres` (porsager) | Fast, light, no `pg` deps |
-| DB | PostgreSQL 16 | Local on droplet |
-| Auth | JWT (jose), bcrypt for password hash | Access tokens 15min, refresh 30d |
-| AI | `@anthropic-ai/sdk` | Server-side only |
-| File upload | `@fastify/multipart` → DO Spaces via S3 SDK | |
-| Logs | `pino` (built into Fastify) | Pretty in dev, JSON in prod |
-| Process mgr | PM2 | `pm2-runtime` if we ever Dockerize |
-| Reverse proxy | Caddy 2 | Auto-SSL, gzip, brotli, sane defaults |
+| Concern       | Tool                                        | Notes                                             |
+| ------------- | ------------------------------------------- | ------------------------------------------------- |
+| Runtime       | Node 20 LTS                                 |                                                   |
+| Framework     | Fastify 4                                   | Lower overhead than Express, schema-first         |
+| Validation    | Zod                                         | Shared types with mobile via a `shared/` package  |
+| ORM           | Drizzle                                     | Type-safe SQL builder. No query engine = low RAM. |
+| DB driver     | `postgres` (porsager)                       | Fast, light, no `pg` deps                         |
+| DB            | PostgreSQL 16                               | Local on droplet                                  |
+| Auth          | JWT (jose), bcrypt for password hash        | Access tokens 15min, refresh 30d                  |
+| AI            | `@anthropic-ai/sdk`                         | Server-side only                                  |
+| File upload   | `@fastify/multipart` → DO Spaces via S3 SDK |                                                   |
+| Logs          | `pino` (built into Fastify)                 | Pretty in dev, JSON in prod                       |
+| Process mgr   | PM2                                         | `pm2-runtime` if we ever Dockerize                |
+| Reverse proxy | Caddy 2                                     | Auto-SSL, gzip, brotli, sane defaults             |
 
 ### Why not …
 
@@ -306,12 +307,14 @@ POST   /v1/integrations/apple-health/import   bulk push from app
 ## Auth flow
 
 **Signup / Login:**
+
 1. Client POSTs credentials → server validates → returns `{ accessToken (15m), refreshToken (30d) }`.
 2. Both stored in `expo-secure-store` (encrypted keychain/keystore).
 3. Access token sent in `Authorization: Bearer` header.
 4. On 401, client uses refresh token to get a new pair. If refresh fails, log out.
 
 **Apple / Google:**
+
 1. Native SDK on client returns identity token.
 2. Backend verifies signature against Apple/Google JWKS.
 3. Match by `apple_sub` / `google_sub` or email; create user if needed.
@@ -331,12 +334,12 @@ never sees the API key.
 
 ### Model choices
 
-| Use case | Model | Why |
-|---|---|---|
-| Coach chat | `claude-sonnet-4-6` | Good reasoning, fast, reasonable cost |
-| Food scan (vision) | `claude-sonnet-4-6` | Vision-capable, accurate portion estimates |
-| Recipe generation | `claude-haiku-4-5` | Cheap, fast, structured output is enough |
-| Quick classifications | `claude-haiku-4-5` | e.g. workout type from free-text |
+| Use case              | Model               | Why                                        |
+| --------------------- | ------------------- | ------------------------------------------ |
+| Coach chat            | `claude-sonnet-4-6` | Good reasoning, fast, reasonable cost      |
+| Food scan (vision)    | `claude-sonnet-4-6` | Vision-capable, accurate portion estimates |
+| Recipe generation     | `claude-haiku-4-5`  | Cheap, fast, structured output is enough   |
+| Quick classifications | `claude-haiku-4-5`  | e.g. workout type from free-text           |
 
 ### Coach context construction
 
@@ -493,6 +496,7 @@ jobs:
 ## When the $12 droplet isn't enough
 
 Signals to upgrade:
+
 - Memory usage > 70% sustained → bump to 4GB ($18/mo)
 - DB > 60% of disk → bump storage or move DB to a managed Postgres
 - API p99 latency > 500ms on simple reads → add Redis cache, or scale up

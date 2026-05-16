@@ -199,7 +199,7 @@ PORT=3000
   errors automatically; background work needs explicit `.catch()`.
 - **DO Spaces eventual consistency**: don't read-after-write on the same object
   immediately. Return the URL after upload; let the client fetch it normally.
-- **Migrations on deploy**: always run *before* reloading PM2. Otherwise a new
+- **Migrations on deploy**: always run _before_ reloading PM2. Otherwise a new
   Node process hits an old schema.
 
 ## When in doubt

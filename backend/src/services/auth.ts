@@ -1,6 +1,8 @@
 import { createHash, randomBytes } from 'node:crypto';
 import bcrypt from 'bcrypt';
 import { SignJWT, jwtVerify, errors as joseErrors } from 'jose';
+import { db } from '../db/client.js';
+import { refreshTokens } from '../db/schema.js';
 import { config } from '../config.js';
 import { UnauthorizedError } from '../lib/errors.js';
 
@@ -105,3 +107,34 @@ export const tokens = {
   accessTtlSeconds: ACCESS_TTL_SECONDS,
   refreshTtlSeconds: REFRESH_TTL_SECONDS,
 };
+
+export interface IssuedTokens {
+  accessToken: string;
+  refreshToken: string;
+  accessExpiresAt: string;
+  refreshExpiresAt: string;
+}
+
+export async function issueTokens(userId: string, email: string): Promise<IssuedTokens> {
+  const jti = newRefreshTokenId();
+  const [accessToken, refreshToken] = await Promise.all([
+    signAccessToken({ sub: userId, email }),
+    signRefreshToken({ sub: userId, jti }),
+  ]);
+  const now = Date.now();
+  const refreshExpiresAt = new Date(now + REFRESH_TTL_SECONDS * 1000);
+
+  await db.insert(refreshTokens).values({
+    id: jti,
+    userId,
+    tokenHash: hashRefreshToken(refreshToken),
+    expiresAt: refreshExpiresAt,
+  });
+
+  return {
+    accessToken,
+    refreshToken,
+    accessExpiresAt: new Date(now + ACCESS_TTL_SECONDS * 1000).toISOString(),
+    refreshExpiresAt: refreshExpiresAt.toISOString(),
+  };
+}

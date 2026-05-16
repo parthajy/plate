@@ -32,3 +32,20 @@ export const ProfileTargets = z.object({
   dailyFatG: z.number().int().min(0).max(300),
 });
 export type ProfileTargets = z.infer<typeof ProfileTargets>;
+
+// Partial-update for the You / Settings screens. Any combination of fields
+// can be sent; the backend recomputes targets when a body-composition field
+// changes (unless keepTargets is set).
+export const ProfilePatchSchema = z.object({
+  displayName: z.string().trim().min(1).max(64).optional(),
+  sex: Sex.optional(),
+  birthdate: z.string().date().optional(),
+  heightCm: z.number().int().min(80).max(260).optional(),
+  weightKg: z.number().min(25).max(400).optional(),
+  activities: z.array(Activity).min(1).max(6).optional(),
+  goal: Goal.optional(),
+  goalRateKgPerWeek: z.number().min(0).max(1.5).optional(),
+  units: Units.optional(),
+  keepTargets: z.boolean().optional(),
+});
+export type ProfilePatchInput = z.infer<typeof ProfilePatchSchema>;

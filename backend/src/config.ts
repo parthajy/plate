@@ -12,6 +12,10 @@ const ConfigSchema = z.object({
 
   ANTHROPIC_API_KEY: z.string().optional(),
 
+  // Transactional email for the OTP login flow.
+  RESEND_API_KEY: z.string().optional(),
+  RESEND_FROM: z.string().optional(),
+
   SPACES_ENDPOINT: z.string().url().optional(),
   SPACES_REGION: z.string().optional(),
   SPACES_BUCKET: z.string().optional(),
@@ -21,6 +25,7 @@ const ConfigSchema = z.object({
   APPLE_CLIENT_ID: z.string().optional(),
   GOOGLE_CLIENT_ID_IOS: z.string().optional(),
   GOOGLE_CLIENT_ID_ANDROID: z.string().optional(),
+  GOOGLE_CLIENT_ID_WEB: z.string().optional(),
 
   SENTRY_DSN: z.string().url().optional(),
 });
@@ -28,7 +33,12 @@ const ConfigSchema = z.object({
 export type Config = z.infer<typeof ConfigSchema>;
 
 function load(): Config {
-  const result = ConfigSchema.safeParse(process.env);
+  // Treat empty-string env values as "not set" so optional .url() fields
+  // don't trip on `FOO=` lines in .env files.
+  const env = Object.fromEntries(
+    Object.entries(process.env).map(([k, v]) => [k, v === '' ? undefined : v]),
+  );
+  const result = ConfigSchema.safeParse(env);
   if (!result.success) {
     const issues = result.error.issues
       .map((i) => `  - ${i.path.join('.') || '(root)'}: ${i.message}`)

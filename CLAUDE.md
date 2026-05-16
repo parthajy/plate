@@ -20,29 +20,29 @@ Core features (the only things that matter):
 3. **AI coach "Kai"** — Claude-powered, remembers your goals/history/activity, replies fast
 4. **Pantry → Recipe** — list what you have, get a high-protein recipe in seconds
 5. **Light workout logging** — log "gym 60min" or sets/reps if you want, plus Apple Health/Google Fit sync
-6. **Sport context at signup** — multi-select (gym, run, cycle, swim, sports, yoga). Drives the *coach's* tone and advice, not separate dashboards. One UI for everyone.
+6. **Sport context at signup** — multi-select (gym, run, cycle, swim, sports, yoga). Drives the _coach's_ tone and advice, not separate dashboards. One UI for everyone.
 
 ---
 
 ## Stack (committed)
 
-| Layer | Choice | Why |
-|---|---|---|
-| Mobile | Expo SDK 50+, React Native, TypeScript | One codebase, EAS Build for both stores |
-| Routing | Expo Router (file-based) | Convention over config |
-| Styling | NativeWind (Tailwind for RN) | Claude Code writes Tailwind fluently |
-| Mobile state | Zustand + React Query (TanStack) | Lightweight, no Redux ceremony |
-| Forms | React Hook Form + Zod | Type-safe validation, shared with backend |
-| Animations | React Native Reanimated 3 | Smooth, gesture-driven |
-| Backend | Node 20, TypeScript, Fastify | Lighter than Express, fast on 2GB |
-| ORM | Drizzle | Type-safe SQL, low memory (Prisma is too heavy) |
-| DB | PostgreSQL 16 | Battle-tested. Lives on the same droplet |
-| AI | Anthropic Claude API | Sonnet for vision/coach, Haiku for cheap tasks |
-| Auth | JWT (access + refresh) + Apple/Google Sign-In | Apple is mandatory if Google is offered |
-| Infra | DigitalOcean basic droplet ($12/mo) | One box. Caddy + PM2 + Postgres |
-| Reverse proxy | Caddy | Auto-SSL via Let's Encrypt, dead simple |
-| Process mgr | PM2 | Restart on crash, logs |
-| File storage | DO Spaces ($5/mo) for food images | S3-compatible, cheap |
+| Layer         | Choice                                        | Why                                             |
+| ------------- | --------------------------------------------- | ----------------------------------------------- |
+| Mobile        | Expo SDK 50+, React Native, TypeScript        | One codebase, EAS Build for both stores         |
+| Routing       | Expo Router (file-based)                      | Convention over config                          |
+| Styling       | NativeWind (Tailwind for RN)                  | Claude Code writes Tailwind fluently            |
+| Mobile state  | Zustand + React Query (TanStack)              | Lightweight, no Redux ceremony                  |
+| Forms         | React Hook Form + Zod                         | Type-safe validation, shared with backend       |
+| Animations    | React Native Reanimated 3                     | Smooth, gesture-driven                          |
+| Backend       | Node 20, TypeScript, Fastify                  | Lighter than Express, fast on 2GB               |
+| ORM           | Drizzle                                       | Type-safe SQL, low memory (Prisma is too heavy) |
+| DB            | PostgreSQL 16                                 | Battle-tested. Lives on the same droplet        |
+| AI            | Anthropic Claude API                          | Sonnet for vision/coach, Haiku for cheap tasks  |
+| Auth          | JWT (access + refresh) + Apple/Google Sign-In | Apple is mandatory if Google is offered         |
+| Infra         | DigitalOcean basic droplet ($12/mo)           | One box. Caddy + PM2 + Postgres                 |
+| Reverse proxy | Caddy                                         | Auto-SSL via Let's Encrypt, dead simple         |
+| Process mgr   | PM2                                           | Restart on crash, logs                          |
+| File storage  | DO Spaces ($5/mo) for food images             | S3-compatible, cheap                            |
 
 ---
 

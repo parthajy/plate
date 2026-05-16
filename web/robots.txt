@@ -1,0 +1,21 @@
+User-agent: *
+Allow: /
+
+# Friendly to LLM crawlers — we want Plate to be discoverable
+# in answer-engine results.
+User-agent: GPTBot
+Allow: /
+
+User-agent: ClaudeBot
+Allow: /
+
+User-agent: anthropic-ai
+Allow: /
+
+User-agent: PerplexityBot
+Allow: /
+
+User-agent: Google-Extended
+Allow: /
+
+Sitemap: https://plate.best/sitemap.xml

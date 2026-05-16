@@ -1,7 +1,11 @@
 // Single source of truth for design tokens. Mirrors DESIGN.md exactly.
 // Tailwind config also references these values — keep them in sync.
+//
+// `colors` is a mutable object — when the OS theme switches, we Object.assign
+// the new palette in and the root layout remounts the tree by key. Screens
+// can keep using `colors.X` directly without reaching for a hook.
 
-export const colors = {
+const darkPalette = {
   bg: '#0b0b0a',
   bgWarm: '#100f0d',
   surface: '#161513',
@@ -25,7 +29,16 @@ export const colors = {
   protein: '#dcff4f',
   carbs: '#ff6a1a',
   fat: '#ffb347',
-} as const;
+};
+
+export const colors = { ...darkPalette };
+
+export type ThemeMode = 'light' | 'dark';
+
+export function applyTheme(mode: ThemeMode): void {
+  const next = mode === 'light' ? colorsLight : darkPalette;
+  Object.assign(colors, next);
+}
 
 export const colorsLight = {
   bg: '#faf8f1',
