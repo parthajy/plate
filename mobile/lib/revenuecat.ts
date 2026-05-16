@@ -29,9 +29,16 @@ export function initRevenueCat(): void {
     return;
   }
 
-  Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.WARN);
-  Purchases.configure({ apiKey });
-  configured = true;
+  try {
+    Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.WARN);
+    Purchases.configure({ apiKey });
+    configured = true;
+  } catch (err) {
+    // A bad/test key in production will throw here. Don't crash the app —
+    // RevenueCat is best-effort; the paywall is the only thing that depends
+    // on it and that's hidden behind a flag until v1.1.
+    if (__DEV__) console.warn('[RevenueCat] configure failed', err);
+  }
 }
 
 export function isRevenueCatConfigured(): boolean {
