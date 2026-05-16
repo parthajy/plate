@@ -5,6 +5,9 @@ module.exports = {
       name: 'plate-api',
       script: 'dist/server.js',
       cwd: __dirname,
+      // Load secrets from .env via Node's built-in --env-file (no dotenv dep).
+      // The .env file lives next to ecosystem.config.cjs (backend/.env).
+      node_args: '--env-file=.env',
       instances: 1,
       exec_mode: 'fork',
       max_memory_restart: '512M',
