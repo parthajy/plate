@@ -51,7 +51,10 @@ export const colorsLight = {
   text: '#15140f',
   text2: '#5a574d',
   text3: '#8a857a',
-  textInv: '#ffffff',
+  // `textInv` = "text color when sitting on `accent` background". Both lime
+  // (dark mode) and olive (light mode) need DARK text — white on olive fails
+  // WCAG AA for small text. Keep both modes' textInv near-black.
+  textInv: '#0b0b0a',
 
   accent: '#7a9b00',
   accentDim: '#5d7700',

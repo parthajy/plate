@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useRouter } from 'expo-router';
-import { Platform, Pressable, Text, View } from 'react-native';
+import { Platform, Pressable, Text, useColorScheme, View } from 'react-native';
+import { useSettings } from '../../stores/settings';
 import DateTimePicker from '@react-native-community/datetimepicker';
 import type { Sex } from '@plate/shared';
 import { OnboardingShell } from '../../components/onboarding/OnboardingShell';
@@ -47,6 +48,19 @@ export default function SexScreen() {
   const [sex, setSex] = useState<Sex | undefined>(draft.sex);
   const [dob, setDob] = useState<Date | null>(draft.birthdate ? new Date(draft.birthdate) : null);
   const [pickerOpen, setPickerOpen] = useState(false);
+
+  // Spinner picker needs the right themeVariant or its text disappears
+  // (dark text on dark bg in light mode, light on light in dark mode).
+  const sysScheme = useColorScheme();
+  const themeMode = useSettings((s) => s.themeMode);
+  const effectiveMode: 'light' | 'dark' =
+    themeMode === 'light'
+      ? 'light'
+      : themeMode === 'dark'
+        ? 'dark'
+        : sysScheme === 'light'
+          ? 'light'
+          : 'dark';
 
   const valid = !!sex && !!dob;
 
@@ -159,7 +173,8 @@ export default function SexScreen() {
               value={dob ?? DEFAULT_DOB}
               mode="date"
               display="spinner"
-              themeVariant="dark"
+              themeVariant={effectiveMode}
+              textColor={colors.text}
               minimumDate={MIN_DOB}
               maximumDate={MAX_DOB}
               onChange={(_, picked) => {

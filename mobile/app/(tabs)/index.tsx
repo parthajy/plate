@@ -164,7 +164,7 @@ export default function Today() {
             <Text
               style={{
                 ...type.monoSm,
-                color: colors.text3,
+                color: colors.text2,
                 letterSpacing: 1.4,
                 textTransform: 'uppercase',
               }}
@@ -249,7 +249,7 @@ export default function Today() {
             <Text
               style={{
                 ...type.monoSm,
-                color: colors.text3,
+                color: colors.text2,
                 letterSpacing: 1.4,
                 textTransform: 'uppercase',
               }}

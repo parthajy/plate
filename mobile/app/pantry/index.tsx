@@ -232,7 +232,7 @@ export default function PantryScreen() {
         <Text
           style={{
             ...type.monoSm,
-            color: colors.text3,
+            color: colors.text2,
             letterSpacing: 1.4,
             textTransform: 'uppercase',
             marginTop: 22,
@@ -250,17 +250,19 @@ export default function PantryScreen() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 8,
-                paddingVertical: 12,
-                paddingHorizontal: 16,
+                paddingVertical: 10,
+                paddingHorizontal: 14,
                 borderRadius: radius.full,
-                backgroundColor: colors.surface2,
-                borderWidth: 1,
+                // `surface` contrasts more crisply with `bg` than `surface2`
+                // (which is nearly indistinguishable from page bg in light mode).
+                backgroundColor: colors.surface,
+                borderWidth: 1.5,
                 borderColor: colors.borderHi,
                 opacity: pressed ? 0.7 : 1,
               })}
             >
               <Text style={{ fontSize: 16 }}>{foodEmoji(q)}</Text>
-              <Text style={[type.body, { color: colors.text }]}>{q}</Text>
+              <Text style={[type.body, { color: colors.text, fontWeight: '500' }]}>{q}</Text>
             </Pressable>
           ))}
         </View>
@@ -269,7 +271,7 @@ export default function PantryScreen() {
         <Text
           style={{
             ...type.monoSm,
-            color: colors.text3,
+            color: colors.text2,
             letterSpacing: 1.4,
             textTransform: 'uppercase',
             marginTop: 28,

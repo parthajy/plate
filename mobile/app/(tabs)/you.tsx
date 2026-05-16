@@ -371,8 +371,11 @@ export default function YouTab() {
 
 // Function (not const) so it re-reads the mutable `colors` object after a
 // theme switch. A frozen const captures the initial palette and never updates.
+// `width: '100%'` is non-negotiable — without it the Pressable shrinks to its
+// content width and the icon+text stack vertically inside the parent column.
 const rowStyle = () =>
   ({
+    width: '100%' as const,
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     paddingHorizontal: 18,

@@ -268,10 +268,11 @@ export default function CoachTab() {
               borderRadius: 24,
               alignItems: 'center',
               justifyContent: 'center',
-              // Accent contrasts well in both themes (lime/dark · olive/light)
-              backgroundColor: active ? colors.accent : 'transparent',
-              borderWidth: active ? 0 : 1.5,
-              borderColor: colors.borderHi,
+              // Always-filled. Transparent + faint border vanished in light
+              // mode. Surface bg gives a visible empty state in both themes.
+              backgroundColor: active ? colors.accent : colors.surface,
+              borderWidth: 1.5,
+              borderColor: active ? colors.accent : colors.borderHi,
               transform: [{ scale: pressed ? 0.92 : 1 }],
             };
           }}
@@ -280,9 +281,9 @@ export default function CoachTab() {
             <ActivityIndicator color={colors.text2} size="small" />
           ) : (
             <ArrowUp
-              size={20}
-              color={draft.trim() ? colors.textInv : colors.text2}
-              strokeWidth={2.6}
+              size={22}
+              color={draft.trim() ? colors.textInv : colors.text}
+              strokeWidth={2.8}
             />
           )}
         </Pressable>
