@@ -2,12 +2,12 @@ import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, View } fr
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ChevronRight, Flame } from 'lucide-react-native';
 import type { StatsResponse, Units } from '@plate/shared';
 import { api } from '../../lib/api';
 import { useAuth } from '../../stores/auth';
 import { useSettings, type ThemeMode } from '../../stores/settings';
-import { colors, type } from '../../lib/theme';
+import { colors, radius, type } from '../../lib/theme';
 
 const GOAL_LABEL: Record<string, string> = {
   lose: 'Lose',
@@ -158,6 +158,48 @@ export default function YouTab() {
 
       <Divider />
 
+      {/* Lifetime snapshot — tappable card surfacing the 3 most-loved
+          metrics. Keeps the user oriented without making them dig into
+          /you/stats. */}
+      <Pressable
+        onPress={() => router.push('/you/stats')}
+        accessibilityRole="button"
+        accessibilityLabel="View your lifetime stats"
+        style={({ pressed }) => ({
+          marginTop: 18,
+          marginBottom: 6,
+          padding: 18,
+          borderRadius: radius.xl,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+          transform: [{ scale: pressed ? 0.99 : 1 }],
+        })}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <Flame size={18} color={colors.accent} strokeWidth={1.8} />
+          <Text
+            style={{
+              ...type.monoSm,
+              color: colors.text2,
+              letterSpacing: 1.4,
+              textTransform: 'uppercase',
+              flex: 1,
+            }}
+          >
+            Your lifetime
+          </Text>
+          <ChevronRight size={18} color={colors.text3} />
+        </View>
+        <View style={{ flexDirection: 'row', marginTop: 14 }}>
+          <LifetimeStat value={streak} label="day streak" big />
+          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 12 }} />
+          <LifetimeStat value={Math.round(stats?.avgKcal ?? 0)} label="kcal / day" />
+          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 12 }} />
+          <LifetimeStat value={stats?.totalWorkouts ?? 0} label="workouts" />
+        </View>
+      </Pressable>
+
       {/* Settings list — each row is just text + value + chevron, hairline below */}
       <SettingRow
         title="Goals & targets"
@@ -258,6 +300,37 @@ function StatCell({
   );
 }
 
+// ----- Lifetime stat cell -----
+
+function LifetimeStat({ value, label, big }: { value: number; label: string; big?: boolean }) {
+  return (
+    <View style={{ flex: 1 }}>
+      <Text
+        style={{
+          fontFamily: 'Fraunces_400Regular',
+          fontSize: big ? 30 : 22,
+          lineHeight: big ? 34 : 26,
+          letterSpacing: -0.4,
+          color: colors.text,
+        }}
+      >
+        {value.toLocaleString()}
+      </Text>
+      <Text
+        style={{
+          ...type.monoSm,
+          color: colors.text3,
+          letterSpacing: 1.1,
+          textTransform: 'uppercase',
+          marginTop: 4,
+        }}
+      >
+        {label}
+      </Text>
+    </View>
+  );
+}
+
 // ----- Settings row + divider -----
 
 function SettingRow({
@@ -280,6 +353,11 @@ function SettingRow({
       accessibilityRole={onPress ? 'button' : undefined}
       accessibilityLabel={title}
       style={({ pressed }) => ({
+        // `alignSelf: 'stretch'` + `width: '100%'` belt-and-suspenders so the
+        // Pressable fills the parent column. Without it the Pressable shrinks
+        // to content width and the title/value/chevron stack vertically.
+        alignSelf: 'stretch',
+        width: '100%',
         flexDirection: 'row',
         alignItems: 'center',
         paddingVertical: 18,
@@ -293,17 +371,20 @@ function SettingRow({
           ...type.bodyLg,
           color: danger ? colors.danger : colors.text,
           fontWeight: '500',
+          flexShrink: 0,
         }}
       >
         {title}
       </Text>
-      <View style={{ flex: 1 }} />
+      <View style={{ flex: 1, minWidth: 12 }} />
       {value ? (
         <Text
           style={{
             ...type.body,
             color: colors.text3,
             marginRight: onPress && !noChevron ? 8 : 0,
+            flexShrink: 1,
+            textAlign: 'right',
           }}
           numberOfLines={1}
         >

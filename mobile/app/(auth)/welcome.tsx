@@ -1,14 +1,13 @@
 import { useRouter } from 'expo-router';
-import { Platform, Text, View } from 'react-native';
+import { ActivityIndicator, Platform, Pressable, Text, View } from 'react-native';
 import Animated, { FadeInDown } from 'react-native-reanimated';
-import * as AppleAuthentication from 'expo-apple-authentication';
 import { Button } from '../../components/ui/Button';
-import { GoogleSignInButton } from '../../components/ui/GoogleSignInButton';
+import { GoogleGIcon } from '../../components/ui/GoogleGIcon';
 import { Screen } from '../../components/ui/Screen';
 import { PulseLine } from '../../components/ui/PulseLine';
 import { useAppleSignIn } from '../../hooks/useAppleSignIn';
 import { useGoogleSignIn } from '../../hooks/useGoogleSignIn';
-import { colors, radius, type } from '../../lib/theme';
+import { colors, type } from '../../lib/theme';
 
 export default function Welcome() {
   const router = useRouter();
@@ -67,7 +66,7 @@ export default function Welcome() {
           </Animated.View>
         </View>
 
-        <Animated.View entering={FadeInDown.duration(500).delay(560)} style={{ gap: 12 }}>
+        <Animated.View entering={FadeInDown.duration(500).delay(560)} style={{ gap: 14 }}>
           <Button
             label="Continue with email"
             size="lg"
@@ -79,7 +78,7 @@ export default function Welcome() {
                 flexDirection: 'row',
                 alignItems: 'center',
                 gap: 10,
-                marginVertical: 4,
+                marginVertical: 2,
               }}
             >
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
@@ -95,18 +94,82 @@ export default function Welcome() {
               <View style={{ flex: 1, height: 1, backgroundColor: colors.border }} />
             </View>
           ) : null}
-          {apple.available && Platform.OS === 'ios' ? (
-            <AppleAuthentication.AppleAuthenticationButton
-              buttonType={AppleAuthentication.AppleAuthenticationButtonType.CONTINUE}
-              buttonStyle={AppleAuthentication.AppleAuthenticationButtonStyle.WHITE}
-              cornerRadius={radius.md}
-              style={{ height: 52 }}
-              onPress={() => void apple.signIn()}
-            />
+
+          {/* Icon-only sign-in buttons. Apple uses the U+F8FF Apple-logo
+              glyph rendered by iOS's system font — works on iPhone/iPad
+              builds; on other platforms the AppleAuth flow is gated by
+              `apple.available && Platform.OS === 'ios'` so the glyph never
+              renders without iOS font support. */}
+          {(apple.available && Platform.OS === 'ios') || google.available ? (
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                gap: 18,
+                paddingVertical: 4,
+              }}
+            >
+              {apple.available && Platform.OS === 'ios' ? (
+                <Pressable
+                  onPress={() => void apple.signIn()}
+                  disabled={apple.inFlight}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue with Apple"
+                  style={({ pressed }) => ({
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: '#000000',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    opacity: apple.inFlight ? 0.5 : pressed ? 0.7 : 1,
+                  })}
+                >
+                  {apple.inFlight ? (
+                    <ActivityIndicator color="#ffffff" size="small" />
+                  ) : (
+                    <Text
+                      style={{
+                        color: '#ffffff',
+                        fontSize: 32,
+                        lineHeight: 36,
+                        marginTop: -2,
+                      }}
+                    >
+                      {''}
+                    </Text>
+                  )}
+                </Pressable>
+              ) : null}
+
+              {google.available ? (
+                <Pressable
+                  onPress={() => void google.signIn()}
+                  disabled={google.inFlight}
+                  accessibilityRole="button"
+                  accessibilityLabel="Continue with Google"
+                  style={({ pressed }) => ({
+                    width: 64,
+                    height: 64,
+                    borderRadius: 32,
+                    backgroundColor: '#ffffff',
+                    alignItems: 'center',
+                    justifyContent: 'center',
+                    borderWidth: 1,
+                    borderColor: colors.borderHi,
+                    opacity: google.inFlight ? 0.5 : pressed ? 0.7 : 1,
+                  })}
+                >
+                  {google.inFlight ? (
+                    <ActivityIndicator color="#1f1f1f" size="small" />
+                  ) : (
+                    <GoogleGIcon size={28} />
+                  )}
+                </Pressable>
+              ) : null}
+            </View>
           ) : null}
-          {google.available ? (
-            <GoogleSignInButton onPress={() => void google.signIn()} loading={google.inFlight} />
-          ) : null}
+
           {apple.error || google.error ? (
             <Text style={{ ...type.bodySm, color: colors.danger, textAlign: 'center' }}>
               {apple.error ?? google.error}

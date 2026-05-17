@@ -23,7 +23,6 @@ import type {
 } from '@plate/shared';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
-import { foodEmoji } from '../../lib/foodIcons';
 import { useLogFood } from '../../hooks/useDailyLogs';
 import { toIsoDate } from '../../lib/formatters';
 import { RecipeProcessingOverlay } from '../../components/recipe/RecipeProcessingOverlay';
@@ -205,7 +204,6 @@ export default function PantryRecipe() {
             {visibleItems.map((item) => (
               <IngredientChip
                 key={item.id}
-                emoji={foodEmoji(item.ingredient)}
                 label={item.ingredient}
                 onPress={() => removeItem.mutate(item.id)}
               />
@@ -227,13 +225,7 @@ export default function PantryRecipe() {
             </Text>
             <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
               {QUICK_ADD.map((q) => (
-                <IngredientChip
-                  key={q}
-                  emoji={foodEmoji(q)}
-                  label={q}
-                  onPress={() => onAdd(q)}
-                  variant="outline"
-                />
+                <IngredientChip key={q} label={q} onPress={() => onAdd(q)} variant="outline" />
               ))}
               <AddChip
                 onPress={() => {
@@ -387,14 +379,21 @@ export default function PantryRecipe() {
 }
 
 // ----- Chips -----
+//
+// Pills are text-only. Earlier versions had emoji + text but they rendered
+// as column-stacked tiles in light mode because the cream-on-cream border
+// was invisible. Text-only + a darker (`text3`) border gives an obvious
+// pill in both themes.
+//
+// Two visual variants:
+//   filled  — solid accent bg, dark text (used for "in your pantry" — tap to remove)
+//   outline — page bg, accent border (used for empty-state Quick Add — tap to add)
 
 function IngredientChip({
-  emoji,
   label,
   onPress,
   variant = 'filled',
 }: {
-  emoji: string;
   label: string;
   onPress: () => void;
   variant?: 'filled' | 'outline';
@@ -404,25 +403,22 @@ function IngredientChip({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 8,
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: radius.full,
-        backgroundColor: filled ? colors.surface : 'transparent',
-        borderWidth: 1.5,
-        borderColor: colors.borderHi,
+        paddingVertical: 9,
+        paddingHorizontal: 16,
+        borderRadius: 999,
+        backgroundColor: filled ? colors.accent : 'transparent',
+        borderWidth: filled ? 0 : 1.5,
+        borderColor: colors.accent,
         opacity: pressed ? 0.7 : 1,
       })}
     >
-      <Text style={{ fontSize: 16 }}>{emoji}</Text>
       <Text
         style={{
-          ...type.body,
-          color: colors.text,
-          fontWeight: '500',
+          fontSize: 15,
+          color: filled ? colors.textInv : colors.text,
+          fontWeight: '600',
           textTransform: 'capitalize',
+          letterSpacing: -0.1,
         }}
       >
         {label}
@@ -436,16 +432,24 @@ function MutedChip({ label, onPress }: { label: string; onPress: () => void }) {
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingVertical: 10,
-        paddingHorizontal: 14,
-        borderRadius: radius.full,
+        paddingVertical: 9,
+        paddingHorizontal: 16,
+        borderRadius: 999,
         backgroundColor: 'transparent',
         borderWidth: 1.5,
-        borderColor: colors.border,
+        borderColor: colors.text3,
         opacity: pressed ? 0.6 : 1,
       })}
     >
-      <Text style={[type.body, { color: colors.text3, fontWeight: '500' }]}>{label}</Text>
+      <Text
+        style={{
+          fontSize: 15,
+          color: colors.text3,
+          fontWeight: '500',
+        }}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -458,19 +462,27 @@ function AddChip({ onPress }: { onPress: () => void }) {
       style={({ pressed }) => ({
         flexDirection: 'row',
         alignItems: 'center',
-        gap: 6,
-        paddingVertical: 10,
+        gap: 4,
+        paddingVertical: 9,
         paddingHorizontal: 14,
-        borderRadius: radius.full,
+        borderRadius: 999,
         backgroundColor: 'transparent',
         borderWidth: 1.5,
-        borderColor: colors.borderHi,
+        borderColor: colors.text3,
         borderStyle: 'dashed',
         opacity: pressed ? 0.6 : 1,
       })}
     >
       <Plus size={16} color={colors.text2} strokeWidth={2.4} />
-      <Text style={[type.body, { color: colors.text2, fontWeight: '500' }]}>Add</Text>
+      <Text
+        style={{
+          fontSize: 15,
+          color: colors.text2,
+          fontWeight: '500',
+        }}
+      >
+        Add
+      </Text>
     </Pressable>
   );
 }
@@ -488,18 +500,18 @@ function FilterChip({
     <Pressable
       onPress={onPress}
       style={({ pressed }) => ({
-        paddingVertical: 10,
+        paddingVertical: 9,
         paddingHorizontal: 16,
-        borderRadius: radius.full,
+        borderRadius: 999,
         backgroundColor: selected ? colors.accent : 'transparent',
         borderWidth: 1.5,
-        borderColor: selected ? colors.accent : colors.borderHi,
+        borderColor: selected ? colors.accent : colors.text3,
         opacity: pressed ? 0.7 : 1,
       })}
     >
       <Text
         style={{
-          ...type.body,
+          fontSize: 15,
           color: selected ? colors.textInv : colors.text,
           fontWeight: '600',
         }}
