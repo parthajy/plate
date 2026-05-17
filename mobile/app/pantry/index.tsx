@@ -1,6 +1,6 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useMemo, useRef, useState } from 'react';
 import {
-  ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -12,15 +12,25 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, X } from 'lucide-react-native';
-import type { PantryItem, PantryListResponse, RecipeFilters, RecipeResponse } from '@plate/shared';
+import { ChevronLeft, Plus } from 'lucide-react-native';
+import type {
+  MealType,
+  PantryItem,
+  PantryListResponse,
+  Recipe,
+  RecipeFilters,
+  RecipeResponse,
+} from '@plate/shared';
 import { Button } from '../../components/ui/Button';
-import { Chip } from '../../components/ui/Chip';
 import { api, ApiError } from '../../lib/api';
 import { foodEmoji } from '../../lib/foodIcons';
+import { useLogFood } from '../../hooks/useDailyLogs';
+import { toIsoDate } from '../../lib/formatters';
 import { RecipeProcessingOverlay } from '../../components/recipe/RecipeProcessingOverlay';
 import { colors, radius, type } from '../../lib/theme';
 
+// Common ingredients shown when the user's pantry is empty, so they can
+// bootstrap with one tap instead of typing each one.
 const QUICK_ADD = [
   'chicken',
   'rice',
@@ -36,28 +46,32 @@ const QUICK_ADD = [
   'salmon',
   'spinach',
   'butter',
-  'lentils',
-  'tortilla',
-  'yogurt',
-  'oil',
-  'salt',
-  'pepper',
 ];
 
+// Recipe-tuning filters. Keep these terse — they sit on a single wrapping row.
 const TIME_FILTERS: { label: string; value: number }[] = [
-  { label: '≤ 15 min', value: 15 },
-  { label: '≤ 30 min', value: 30 },
-  { label: '≤ 60 min', value: 60 },
+  { label: '< 15 min', value: 15 },
+  { label: '< 30 min', value: 30 },
+  { label: '< 60 min', value: 60 },
 ];
 
-export default function PantryScreen() {
+// Show first VISIBLE_CHIPS chips; collapse the rest behind a "+N more" pill
+// until the user expands. Keeps the page from getting overwhelmed when the
+// pantry has 20+ items.
+const VISIBLE_CHIPS = 8;
+
+export default function PantryRecipe() {
   const insets = useSafeAreaInsets();
   const router = useRouter();
   const queryClient = useQueryClient();
-  const [draft, setDraft] = useState('');
-  const [filters, setFilters] = useState<RecipeFilters>({});
+  const inputRef = useRef<TextInput | null>(null);
 
-  const { data: pantryData, isLoading } = useQuery({
+  const [filters, setFilters] = useState<RecipeFilters>({});
+  const [addOpen, setAddOpen] = useState(false);
+  const [draft, setDraft] = useState('');
+  const [expanded, setExpanded] = useState(false);
+
+  const { data: pantryData } = useQuery({
     queryKey: ['pantry', 'items'],
     queryFn: () => api.get<PantryListResponse>('/v1/pantry/items'),
     staleTime: 30_000,
@@ -93,9 +107,13 @@ export default function PantryScreen() {
     mutationFn: (f: RecipeFilters) => api.post<RecipeResponse>('/v1/pantry/recipe', { filters: f }),
     onSuccess: (resp) => {
       queryClient.setQueryData(['pantry', 'recipe', 'last'], resp);
-      router.push('/pantry/recipe');
     },
   });
+
+  // Pull the most recently generated recipe out of the cache so it stays
+  // visible after navigation back. Cleared when the user explicitly regenerates.
+  const recipeResp = queryClient.getQueryData<RecipeResponse>(['pantry', 'recipe', 'last']);
+  const recipe = recipeResp?.recipe;
 
   const onAdd = useCallback(
     (text: string) => {
@@ -111,27 +129,29 @@ export default function PantryScreen() {
     [addItem, itemNames],
   );
 
-  const toggleTime = (mins: number) => {
+  const toggleTime = (mins: number) =>
     setFilters((f) => ({ ...f, maxMinutes: f.maxMinutes === mins ? undefined : mins }));
-  };
-  const toggle = (k: 'highProtein' | 'lowCarb' | 'vegetarian') =>
+  const toggleFlag = (k: 'highProtein' | 'lowCarb' | 'vegetarian') =>
     setFilters((f) => ({ ...f, [k]: f[k] ? undefined : true }));
 
   const canGenerate = items.length >= 1 && !generate.isPending;
+
+  const visibleItems = expanded ? items : items.slice(0, VISIBLE_CHIPS - 1);
+  const hiddenCount = Math.max(0, items.length - visibleItems.length);
 
   return (
     <KeyboardAvoidingView
       style={{ flex: 1, backgroundColor: colors.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
+      {/* Top bar with back arrow */}
       <View
         style={{
           paddingTop: insets.top + 6,
           paddingHorizontal: 20,
-          paddingBottom: 8,
+          paddingBottom: 4,
           flexDirection: 'row',
           alignItems: 'center',
-          gap: 4,
         }}
       >
         <Pressable
@@ -142,230 +162,179 @@ export default function PantryScreen() {
         >
           <ChevronLeft color={colors.text2} size={26} />
         </Pressable>
-        <Text
-          style={{
-            ...type.monoSm,
-            color: colors.text3,
-            letterSpacing: 1.4,
-            textTransform: 'uppercase',
-          }}
-        >
-          From your fridge
-        </Text>
       </View>
 
       <ScrollView
         contentContainerStyle={{
           paddingHorizontal: 20,
-          paddingBottom: insets.bottom + 110,
-          paddingTop: 4,
+          paddingBottom: insets.bottom + (canGenerate ? 110 : 24),
+          paddingTop: 8,
         }}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
-        <Text style={[type.display2, { color: colors.text }]}>
-          What can I <Text style={{ color: colors.accent, fontStyle: 'italic' }}>make</Text>?
-        </Text>
-        <Text style={[type.body, { color: colors.text2, marginTop: 8 }]}>
-          Tap what you have. I&apos;ll build a recipe.
-        </Text>
-
-        {/* Add custom */}
-        <View
+        {/* Title + eyebrow */}
+        <Text
           style={{
-            marginTop: 22,
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 8,
+            ...type.display1,
+            color: colors.text,
+            fontStyle: 'italic',
+            fontSize: 38,
+            lineHeight: 42,
           }}
         >
+          Got these. Make me something.
+        </Text>
+
+        <Text
+          style={{
+            ...type.monoSm,
+            color: colors.text2,
+            letterSpacing: 1.4,
+            textTransform: 'uppercase',
+            marginTop: 14,
+          }}
+        >
+          {items.length} ingredient{items.length === 1 ? '' : 's'} on hand
+          {items.length > 0 ? ' · tap to remove' : ''}
+        </Text>
+
+        {/* Ingredient chips, or empty-state Quick Add */}
+        {items.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 16 }}>
+            {visibleItems.map((item) => (
+              <IngredientChip
+                key={item.id}
+                emoji={foodEmoji(item.ingredient)}
+                label={item.ingredient}
+                onPress={() => removeItem.mutate(item.id)}
+              />
+            ))}
+            {hiddenCount > 0 && !expanded ? (
+              <MutedChip label={`+ ${hiddenCount} more`} onPress={() => setExpanded(true)} />
+            ) : null}
+            <AddChip
+              onPress={() => {
+                setAddOpen((v) => !v);
+                setTimeout(() => inputRef.current?.focus(), 60);
+              }}
+            />
+          </View>
+        ) : (
+          <View style={{ marginTop: 16 }}>
+            <Text style={[type.body, { color: colors.text2 }]}>
+              Nothing in your pantry yet. Tap an option below to add.
+            </Text>
+            <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10, marginTop: 14 }}>
+              {QUICK_ADD.map((q) => (
+                <IngredientChip
+                  key={q}
+                  emoji={foodEmoji(q)}
+                  label={q}
+                  onPress={() => onAdd(q)}
+                  variant="outline"
+                />
+              ))}
+              <AddChip
+                onPress={() => {
+                  setAddOpen(true);
+                  setTimeout(() => inputRef.current?.focus(), 60);
+                }}
+              />
+            </View>
+          </View>
+        )}
+
+        {/* Inline add input (collapsed by default) */}
+        {addOpen ? (
           <View
             style={{
-              flex: 1,
-              backgroundColor: colors.surface2,
-              borderRadius: radius.md,
+              flexDirection: 'row',
+              alignItems: 'center',
+              gap: 8,
+              marginTop: 14,
+              backgroundColor: colors.surface,
+              borderRadius: radius.full,
               borderWidth: 1,
-              borderColor: colors.border,
-              paddingHorizontal: 14,
-              height: 48,
-              justifyContent: 'center',
+              borderColor: colors.borderHi,
+              paddingHorizontal: 16,
+              height: 46,
             }}
           >
             <TextInput
+              ref={inputRef}
               value={draft}
               onChangeText={setDraft}
               placeholder="Add ingredient…"
               placeholderTextColor={colors.text3}
-              style={{ ...type.body, color: colors.text }}
+              style={{
+                ...type.body,
+                color: colors.text,
+                flex: 1,
+              }}
               autoCapitalize="none"
               autoCorrect={false}
               returnKeyType="done"
-              onSubmitEditing={() => onAdd(draft)}
-              blurOnSubmit={false}
+              onSubmitEditing={() => {
+                onAdd(draft);
+              }}
             />
-          </View>
-          <Pressable
-            onPress={() => onAdd(draft)}
-            disabled={!draft.trim()}
-            accessibilityLabel="Add ingredient"
-            style={({ pressed }) => ({
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              alignItems: 'center',
-              justifyContent: 'center',
-              backgroundColor: draft.trim() ? colors.accent : 'transparent',
-              borderWidth: draft.trim() ? 0 : 1.5,
-              borderColor: colors.borderHi,
-              transform: [{ scale: pressed ? 0.94 : 1 }],
-            })}
-          >
-            <Plus
-              size={22}
-              color={draft.trim() ? colors.textInv : colors.text2}
-              strokeWidth={2.4}
-            />
-          </Pressable>
-        </View>
-
-        {/* Quick add */}
-        <Text
-          style={{
-            ...type.monoSm,
-            color: colors.text2,
-            letterSpacing: 1.4,
-            textTransform: 'uppercase',
-            marginTop: 22,
-            marginBottom: 10,
-          }}
-        >
-          Quick add
-        </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
-          {QUICK_ADD.filter((q) => !itemNames.has(q)).map((q) => (
             <Pressable
-              key={q}
-              onPress={() => onAdd(q)}
-              style={({ pressed }) => ({
-                flexDirection: 'row',
-                alignItems: 'center',
-                gap: 8,
-                paddingVertical: 10,
-                paddingHorizontal: 14,
-                borderRadius: radius.full,
-                // `surface` contrasts more crisply with `bg` than `surface2`
-                // (which is nearly indistinguishable from page bg in light mode).
-                backgroundColor: colors.surface,
-                borderWidth: 1.5,
-                borderColor: colors.borderHi,
-                opacity: pressed ? 0.7 : 1,
-              })}
+              onPress={() => onAdd(draft)}
+              accessibilityLabel="Add"
+              hitSlop={8}
+              style={{ paddingHorizontal: 4 }}
             >
-              <Text style={{ fontSize: 16 }}>{foodEmoji(q)}</Text>
-              <Text style={[type.body, { color: colors.text, fontWeight: '500' }]}>{q}</Text>
+              <Plus
+                size={20}
+                color={draft.trim() ? colors.accent : colors.text3}
+                strokeWidth={2.6}
+              />
             </Pressable>
-          ))}
-        </View>
-
-        {/* In pantry */}
-        <Text
-          style={{
-            ...type.monoSm,
-            color: colors.text2,
-            letterSpacing: 1.4,
-            textTransform: 'uppercase',
-            marginTop: 28,
-            marginBottom: 10,
-          }}
-        >
-          In your pantry · {items.length}
-        </Text>
-        {isLoading ? (
-          <ActivityIndicator color={colors.accent} />
-        ) : items.length === 0 ? (
-          <Text style={[type.body, { color: colors.text3 }]}>
-            Nothing yet. Tap something above.
-          </Text>
-        ) : (
-          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-            {items.map((item) => (
-              <Pressable
-                key={item.id}
-                onPress={() => removeItem.mutate(item.id)}
-                accessibilityLabel={`Remove ${item.ingredient}`}
-                style={({ pressed }) => ({
-                  flexDirection: 'row',
-                  alignItems: 'center',
-                  gap: 8,
-                  paddingLeft: 12,
-                  paddingRight: 6,
-                  paddingVertical: 9,
-                  borderRadius: radius.full,
-                  backgroundColor: colors.accent,
-                  opacity: pressed ? 0.75 : 1,
-                })}
-              >
-                <Text style={{ fontSize: 15 }}>{foodEmoji(item.ingredient)}</Text>
-                <Text
-                  style={{
-                    ...type.bodySm,
-                    color: colors.textInv,
-                    fontWeight: '700',
-                  }}
-                >
-                  {item.ingredient}
-                </Text>
-                <View
-                  style={{
-                    width: 22,
-                    height: 22,
-                    borderRadius: 11,
-                    backgroundColor: 'rgba(0,0,0,0.18)',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                  }}
-                >
-                  <X size={13} color={colors.textInv} strokeWidth={3} />
-                </View>
-              </Pressable>
-            ))}
           </View>
-        )}
+        ) : null}
 
         {/* Filters */}
         <Text
           style={{
             ...type.monoSm,
-            color: colors.text3,
+            color: colors.text2,
             letterSpacing: 1.4,
             textTransform: 'uppercase',
             marginTop: 28,
-            marginBottom: 10,
+            marginBottom: 12,
           }}
         >
           Filters
         </Text>
-        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 10 }}>
           {TIME_FILTERS.map((t) => (
-            <Chip
+            <FilterChip
               key={t.value}
               label={t.label}
               selected={filters.maxMinutes === t.value}
               onPress={() => toggleTime(t.value)}
             />
           ))}
-          <Chip
+          <FilterChip
             label="High protein"
             selected={!!filters.highProtein}
-            onPress={() => toggle('highProtein')}
+            onPress={() => toggleFlag('highProtein')}
           />
-          <Chip label="Low carb" selected={!!filters.lowCarb} onPress={() => toggle('lowCarb')} />
-          <Chip
+          <FilterChip
+            label="Low carb"
+            selected={!!filters.lowCarb}
+            onPress={() => toggleFlag('lowCarb')}
+          />
+          <FilterChip
             label="Vegetarian"
             selected={!!filters.vegetarian}
-            onPress={() => toggle('vegetarian')}
+            onPress={() => toggleFlag('vegetarian')}
           />
         </View>
+
+        {/* Inline recipe card (only after a successful generation) */}
+        {recipe ? <RecipeCard recipe={recipe} /> : null}
 
         {generate.isError ? (
           <View
@@ -387,28 +356,374 @@ export default function PantryScreen() {
         ) : null}
       </ScrollView>
 
-      <View
-        style={{
-          position: 'absolute',
-          left: 0,
-          right: 0,
-          bottom: 0,
-          paddingHorizontal: 20,
-          paddingTop: 10,
-          paddingBottom: insets.bottom + 14,
-          backgroundColor: colors.bg,
-        }}
-      >
-        <Button
-          label="Generate recipe"
-          size="lg"
-          onPress={() => generate.mutate(filters)}
-          disabled={!canGenerate}
-          loading={generate.isPending}
-        />
-      </View>
+      {/* Sticky Generate button — hidden when the pantry is empty (nothing to
+          generate from) so the empty-state Quick-Add chips have room. */}
+      {items.length > 0 ? (
+        <View
+          style={{
+            position: 'absolute',
+            left: 0,
+            right: 0,
+            bottom: 0,
+            paddingHorizontal: 20,
+            paddingTop: 10,
+            paddingBottom: insets.bottom + 14,
+            backgroundColor: colors.bg,
+          }}
+        >
+          <Button
+            label={recipe ? 'Generate another' : 'Generate recipe'}
+            size="lg"
+            onPress={() => generate.mutate(filters)}
+            disabled={!canGenerate}
+            loading={generate.isPending}
+          />
+        </View>
+      ) : null}
 
       {generate.isPending ? <RecipeProcessingOverlay /> : null}
     </KeyboardAvoidingView>
+  );
+}
+
+// ----- Chips -----
+
+function IngredientChip({
+  emoji,
+  label,
+  onPress,
+  variant = 'filled',
+}: {
+  emoji: string;
+  label: string;
+  onPress: () => void;
+  variant?: 'filled' | 'outline';
+}) {
+  const filled = variant === 'filled';
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 8,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: radius.full,
+        backgroundColor: filled ? colors.surface : 'transparent',
+        borderWidth: 1.5,
+        borderColor: colors.borderHi,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text style={{ fontSize: 16 }}>{emoji}</Text>
+      <Text
+        style={{
+          ...type.body,
+          color: colors.text,
+          fontWeight: '500',
+          textTransform: 'capitalize',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+function MutedChip({ label, onPress }: { label: string; onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: radius.full,
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderColor: colors.border,
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <Text style={[type.body, { color: colors.text3, fontWeight: '500' }]}>{label}</Text>
+    </Pressable>
+  );
+}
+
+function AddChip({ onPress }: { onPress: () => void }) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityLabel="Add ingredient"
+      style={({ pressed }) => ({
+        flexDirection: 'row',
+        alignItems: 'center',
+        gap: 6,
+        paddingVertical: 10,
+        paddingHorizontal: 14,
+        borderRadius: radius.full,
+        backgroundColor: 'transparent',
+        borderWidth: 1.5,
+        borderColor: colors.borderHi,
+        borderStyle: 'dashed',
+        opacity: pressed ? 0.6 : 1,
+      })}
+    >
+      <Plus size={16} color={colors.text2} strokeWidth={2.4} />
+      <Text style={[type.body, { color: colors.text2, fontWeight: '500' }]}>Add</Text>
+    </Pressable>
+  );
+}
+
+function FilterChip({
+  label,
+  selected,
+  onPress,
+}: {
+  label: string;
+  selected: boolean;
+  onPress: () => void;
+}) {
+  return (
+    <Pressable
+      onPress={onPress}
+      style={({ pressed }) => ({
+        paddingVertical: 10,
+        paddingHorizontal: 16,
+        borderRadius: radius.full,
+        backgroundColor: selected ? colors.accent : 'transparent',
+        borderWidth: 1.5,
+        borderColor: selected ? colors.accent : colors.borderHi,
+        opacity: pressed ? 0.7 : 1,
+      })}
+    >
+      <Text
+        style={{
+          ...type.body,
+          color: selected ? colors.textInv : colors.text,
+          fontWeight: '600',
+        }}
+      >
+        {label}
+      </Text>
+    </Pressable>
+  );
+}
+
+// ----- Recipe card (inline) -----
+
+const MEALS: { value: MealType; label: string }[] = [
+  { value: 'breakfast', label: 'Breakfast' },
+  { value: 'lunch', label: 'Lunch' },
+  { value: 'dinner', label: 'Dinner' },
+  { value: 'snack', label: 'Snack' },
+];
+
+function pickDefaultMeal(): MealType {
+  const h = new Date().getHours();
+  if (h < 10) return 'breakfast';
+  if (h < 14) return 'lunch';
+  if (h < 18) return 'snack';
+  return 'dinner';
+}
+
+function RecipeCard({ recipe }: { recipe: Recipe }) {
+  const isoDate = toIsoDate(new Date());
+  const logFood = useLogFood(isoDate);
+  const [meal, setMeal] = useState<MealType>(pickDefaultMeal());
+  const [logged, setLogged] = useState(false);
+
+  const servingGrams = useMemo(() => {
+    const total = recipe.ingredients.reduce((acc, i) => acc + i.grams, 0);
+    return Math.round(total / Math.max(1, recipe.servings));
+  }, [recipe]);
+
+  const m = recipe.macrosPerServing;
+  const metaLine = `${recipe.totalMinutes} MIN · ${Math.round(m.proteinG)}g·P · ${Math.round(m.kcal)} KCAL`;
+
+  const onLog = async () => {
+    try {
+      await logFood.mutateAsync({
+        name: recipe.title,
+        grams: servingGrams || 200,
+        kcal: Math.round(m.kcal),
+        proteinG: Math.round(m.proteinG * 10) / 10,
+        carbsG: Math.round(m.carbsG * 10) / 10,
+        fatG: Math.round(m.fatG * 10) / 10,
+        mealType: meal,
+        loggedAt: new Date().toISOString(),
+        source: 'recipe',
+      });
+      setLogged(true);
+    } catch (e) {
+      Alert.alert('Could not log', e instanceof ApiError ? e.message : 'Try again.');
+    }
+  };
+
+  return (
+    <View
+      style={{
+        marginTop: 26,
+        padding: 20,
+        borderRadius: radius.xl,
+        backgroundColor: colors.surface,
+        borderWidth: 1,
+        borderColor: colors.border,
+      }}
+    >
+      {/* Title row with AI badge */}
+      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
+        <Text
+          style={{
+            ...type.display2,
+            color: colors.text,
+            fontStyle: 'italic',
+            flex: 1,
+            fontSize: 28,
+            lineHeight: 32,
+          }}
+        >
+          {recipe.title}
+        </Text>
+        <View
+          style={{
+            paddingHorizontal: 8,
+            paddingVertical: 3,
+            borderRadius: 6,
+            borderWidth: 1.5,
+            borderColor: colors.accent,
+            marginTop: 4,
+          }}
+        >
+          <Text
+            style={{
+              ...type.monoSm,
+              color: colors.accent,
+              letterSpacing: 1.5,
+              fontWeight: '700',
+            }}
+          >
+            AI
+          </Text>
+        </View>
+      </View>
+
+      {/* Meta line */}
+      <Text
+        style={{
+          ...type.monoSm,
+          color: colors.text2,
+          letterSpacing: 1.3,
+          marginTop: 8,
+        }}
+      >
+        {metaLine}
+      </Text>
+
+      {recipe.description ? (
+        <Text style={[type.bodySm, { color: colors.text3, marginTop: 10, lineHeight: 20 }]}>
+          {recipe.description}
+        </Text>
+      ) : null}
+
+      {/* Numbered steps */}
+      <View style={{ marginTop: 18, gap: 14 }}>
+        {recipe.steps.map((s, i) => (
+          <View key={i} style={{ flexDirection: 'row', gap: 14 }}>
+            <Text
+              style={{
+                ...type.monoSm,
+                color: colors.accent,
+                letterSpacing: 0.8,
+                width: 22,
+                marginTop: 4,
+              }}
+            >
+              {String(i + 1).padStart(2, '0')}
+            </Text>
+            <Text style={[type.body, { color: colors.text, flex: 1, lineHeight: 22 }]}>{s}</Text>
+          </View>
+        ))}
+      </View>
+
+      {/* Missing ingredients */}
+      {recipe.missing.length > 0 ? (
+        <View
+          style={{
+            marginTop: 18,
+            padding: 12,
+            borderRadius: radius.md,
+            backgroundColor: colors.surface2,
+            borderWidth: 1,
+            borderColor: colors.borderHi,
+          }}
+        >
+          <Text
+            style={{
+              ...type.monoSm,
+              color: colors.text2,
+              letterSpacing: 1.2,
+              textTransform: 'uppercase',
+            }}
+          >
+            Also need
+          </Text>
+          <Text style={[type.bodySm, { color: colors.text, marginTop: 6 }]}>
+            {recipe.missing.join(' · ')}
+          </Text>
+        </View>
+      ) : null}
+
+      {/* Log as meal */}
+      <Text
+        style={{
+          ...type.monoSm,
+          color: colors.text2,
+          letterSpacing: 1.4,
+          textTransform: 'uppercase',
+          marginTop: 22,
+          marginBottom: 10,
+        }}
+      >
+        Log as
+      </Text>
+      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
+        {MEALS.map((opt) => (
+          <Pressable
+            key={opt.value}
+            onPress={() => setMeal(opt.value)}
+            style={({ pressed }) => ({
+              paddingVertical: 8,
+              paddingHorizontal: 14,
+              borderRadius: radius.full,
+              backgroundColor: meal === opt.value ? colors.accent : 'transparent',
+              borderWidth: 1.5,
+              borderColor: meal === opt.value ? colors.accent : colors.borderHi,
+              opacity: pressed ? 0.7 : 1,
+            })}
+          >
+            <Text
+              style={{
+                ...type.bodySm,
+                color: meal === opt.value ? colors.textInv : colors.text2,
+                fontWeight: '600',
+              }}
+            >
+              {opt.label}
+            </Text>
+          </Pressable>
+        ))}
+      </View>
+
+      <View style={{ marginTop: 18 }}>
+        <Button
+          label={logged ? 'Logged ✓' : 'Log a serving'}
+          size="lg"
+          onPress={() => void onLog()}
+          loading={logFood.isPending}
+          disabled={logged}
+        />
+      </View>
+    </View>
   );
 }

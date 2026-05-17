@@ -1,10 +1,11 @@
 import { useCallback, useMemo, useState } from 'react';
 import { Alert, Pressable, RefreshControl, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { ChefHat, ChevronRight, Plus } from 'lucide-react-native';
-import { useQuery } from '@tanstack/react-query';
-import type { PantryListResponse } from '@plate/shared';
+import { ArrowRight, ChefHat, ChevronRight, Plus } from 'lucide-react-native';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import type { PantryItem, PantryListResponse } from '@plate/shared';
 import { api } from '../../lib/api';
+import { foodEmoji } from '../../lib/foodIcons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { CalorieRing } from '../../components/today/CalorieRing';
 import { MacroBar } from '../../components/today/MacroBar';
@@ -152,90 +153,7 @@ export default function Today() {
           <MacroBar label="Fat" current={totals.fatG} target={target.fatG} color={colors.fat} />
         </View>
 
-        <View style={{ marginTop: 28 }}>
-          <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              justifyContent: 'space-between',
-              marginBottom: 8,
-            }}
-          >
-            <Text
-              style={{
-                ...type.monoSm,
-                color: colors.text2,
-                letterSpacing: 1.4,
-                textTransform: 'uppercase',
-              }}
-            >
-              From your fridge
-            </Text>
-            <Pressable
-              onPress={() => router.push('/pantry')}
-              hitSlop={8}
-              style={{ flexDirection: 'row', alignItems: 'center', gap: 4 }}
-            >
-              <Text style={{ ...type.label, color: colors.accent }}>Edit</Text>
-              <ChevronRight size={14} color={colors.accent} strokeWidth={2.4} />
-            </Pressable>
-          </View>
-
-          <Pressable
-            onPress={() => router.push('/pantry')}
-            style={({ pressed }) => ({
-              flexDirection: 'row',
-              alignItems: 'center',
-              gap: 14,
-              paddingVertical: 14,
-              paddingHorizontal: 18,
-              borderRadius: 999,
-              // `accent` flips lime → dark-olive between modes; pairs cleanly
-              // with `textInv` for the chip label.
-              backgroundColor: colors.accent,
-              transform: [{ scale: pressed ? 0.985 : 1 }],
-            })}
-            accessibilityRole="button"
-            accessibilityLabel="What can I make from what I have"
-          >
-            <View
-              style={{
-                width: 44,
-                height: 44,
-                borderRadius: 22,
-                backgroundColor: 'rgba(0,0,0,0.18)',
-                alignItems: 'center',
-                justifyContent: 'center',
-              }}
-            >
-              <ChefHat size={22} color={colors.textInv} strokeWidth={1.8} />
-            </View>
-            <View style={{ flex: 1 }}>
-              <Text
-                style={{
-                  ...type.display3,
-                  color: colors.textInv,
-                  fontSize: 20,
-                  lineHeight: 24,
-                }}
-              >
-                What can I make today?
-              </Text>
-              <Text
-                style={{
-                  ...type.bodySm,
-                  color: colors.textInv,
-                  opacity: 0.72,
-                  marginTop: 2,
-                }}
-              >
-                {pantryItems.length > 0
-                  ? `${pantryItems.length} ingredient${pantryItems.length === 1 ? '' : 's'} in your pantry`
-                  : "Tap on what you have, I'll cook up a recipe"}
-              </Text>
-            </View>
-          </Pressable>
-        </View>
+        <FromYourFridgeCard pantryItems={pantryItems} onOpen={() => router.push('/pantry')} />
 
         <View style={{ marginTop: 28 }}>
           <View
@@ -296,6 +214,241 @@ export default function Today() {
           )}
         </View>
       </ScrollView>
+    </View>
+  );
+}
+
+// ----- From your fridge card -----
+
+// Common ingredients suggested as one-tap adds when not already in pantry.
+// Keep this in sync with QUICK_ADD in app/pantry/index.tsx — same vocabulary.
+const QUICK_ADD = [
+  'eggs',
+  'chicken',
+  'rice',
+  'onion',
+  'broccoli',
+  'beef',
+  'pasta',
+  'garlic',
+  'tomato',
+  'cheese',
+  'oats',
+  'salmon',
+  'spinach',
+  'butter',
+  'lentils',
+  'tortilla',
+];
+
+function timeOfDayWord(now = new Date()): string {
+  const h = now.getHours();
+  if (h < 10) return 'for breakfast?';
+  if (h < 14) return 'for lunch?';
+  if (h < 17) return 'for a snack?';
+  return 'tonight?';
+}
+
+function FromYourFridgeCard({
+  pantryItems,
+  onOpen,
+}: {
+  pantryItems: PantryItem[];
+  onOpen: () => void;
+}) {
+  const queryClient = useQueryClient();
+  const inPantry = useMemo(
+    () => new Set(pantryItems.map((i) => i.ingredient.toLowerCase())),
+    [pantryItems],
+  );
+  const candidates = useMemo(() => QUICK_ADD.filter((q) => !inPantry.has(q)), [inPantry]);
+  const visible = candidates.slice(0, 4);
+  const overflow = candidates.length - visible.length;
+
+  const addItem = useMutation({
+    mutationFn: (ingredient: string) => api.post<PantryItem>('/v1/pantry/items', { ingredient }),
+    onSuccess: (created) => {
+      queryClient.setQueryData<PantryListResponse>(['pantry', 'items'], (curr) => {
+        const existing = curr?.items.filter((i) => i.id !== created.id) ?? [];
+        return { items: [...existing, created] };
+      });
+    },
+  });
+
+  const titleSuffix = timeOfDayWord();
+
+  return (
+    <View style={{ marginTop: 28, position: 'relative' }}>
+      {/* Left-edge accent stripe — signature flourish that hints at the
+          accent color without taking over the whole card. */}
+      <View
+        style={{
+          position: 'absolute',
+          left: 0,
+          top: 10,
+          bottom: 10,
+          width: 3,
+          borderRadius: 2,
+          backgroundColor: colors.accent,
+        }}
+      />
+
+      <View
+        style={{
+          marginLeft: 4,
+          padding: 18,
+          borderRadius: radius.xl,
+          backgroundColor: colors.surface,
+          borderWidth: 1,
+          borderColor: colors.border,
+        }}
+      >
+        {/* Header row */}
+        <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+          <View
+            style={{
+              width: 28,
+              height: 28,
+              borderRadius: 14,
+              backgroundColor: colors.surface2,
+              borderWidth: 1,
+              borderColor: colors.border,
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginRight: 10,
+            }}
+          >
+            <ChefHat size={16} color={colors.accent} strokeWidth={2} />
+          </View>
+          <Text
+            style={{
+              ...type.monoSm,
+              color: colors.text2,
+              letterSpacing: 1.4,
+              textTransform: 'uppercase',
+              flex: 1,
+            }}
+          >
+            From your fridge
+          </Text>
+          <Pressable
+            onPress={onOpen}
+            hitSlop={8}
+            style={{ flexDirection: 'row', alignItems: 'center', gap: 2 }}
+            accessibilityLabel="Edit pantry"
+          >
+            <Text style={{ ...type.label, color: colors.accent }}>Edit</Text>
+            <ChevronRight size={14} color={colors.accent} strokeWidth={2.4} />
+          </Pressable>
+        </View>
+
+        {/* Title + subtitle */}
+        <Text
+          style={{
+            color: colors.text,
+            fontWeight: '700',
+            fontSize: 22,
+            lineHeight: 28,
+            letterSpacing: -0.3,
+            marginTop: 14,
+          }}
+        >
+          What can I make {titleSuffix}
+        </Text>
+        <Text style={[type.bodySm, { color: colors.text3, marginTop: 6 }]}>
+          {pantryItems.length === 0
+            ? "Tap a few things you have. I'll cook up a recipe."
+            : `${pantryItems.length} in your pantry. Add more, or tap Generate.`}
+        </Text>
+
+        {/* Quick-add chips */}
+        {visible.length > 0 ? (
+          <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
+            {visible.map((q) => (
+              <Pressable
+                key={q}
+                onPress={() => addItem.mutate(q)}
+                disabled={addItem.isPending}
+                style={({ pressed }) => ({
+                  flexDirection: 'row',
+                  alignItems: 'center',
+                  gap: 4,
+                  paddingVertical: 7,
+                  paddingHorizontal: 12,
+                  borderRadius: radius.full,
+                  backgroundColor: colors.bg,
+                  borderWidth: 1,
+                  borderColor: colors.borderHi,
+                  opacity: pressed ? 0.6 : 1,
+                })}
+                accessibilityLabel={`Add ${q}`}
+              >
+                <Text style={{ fontSize: 13 }}>{foodEmoji(q)}</Text>
+                <Text
+                  style={{
+                    ...type.bodySm,
+                    color: colors.text,
+                    fontWeight: '500',
+                    textTransform: 'capitalize',
+                  }}
+                >
+                  {q}
+                </Text>
+              </Pressable>
+            ))}
+            {overflow > 0 ? (
+              <Pressable
+                onPress={onOpen}
+                style={({ pressed }) => ({
+                  paddingVertical: 7,
+                  paddingHorizontal: 12,
+                  borderRadius: radius.full,
+                  backgroundColor: 'transparent',
+                  borderWidth: 1,
+                  borderColor: colors.border,
+                  opacity: pressed ? 0.6 : 1,
+                })}
+                accessibilityLabel={`${overflow} more — open pantry`}
+              >
+                <Text style={[type.bodySm, { color: colors.text3, fontWeight: '500' }]}>
+                  +{overflow}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : null}
+
+        {/* Generate CTA */}
+        <Pressable
+          onPress={onOpen}
+          style={({ pressed }) => ({
+            marginTop: 16,
+            height: 48,
+            borderRadius: radius.full,
+            backgroundColor: colors.accent,
+            flexDirection: 'row',
+            alignItems: 'center',
+            justifyContent: 'center',
+            gap: 8,
+            transform: [{ scale: pressed ? 0.985 : 1 }],
+          })}
+          accessibilityRole="button"
+          accessibilityLabel="Generate a recipe"
+        >
+          <Text
+            style={{
+              ...type.label,
+              color: colors.textInv,
+              fontSize: 15,
+              fontWeight: '700',
+              letterSpacing: 0.2,
+            }}
+          >
+            Generate a recipe
+          </Text>
+          <ArrowRight size={18} color={colors.textInv} strokeWidth={2.6} />
+        </Pressable>
+      </View>
     </View>
   );
 }

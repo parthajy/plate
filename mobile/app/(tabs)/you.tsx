@@ -1,38 +1,26 @@
-import { useState } from 'react';
-import { Alert, Pressable, ScrollView, Text, View } from 'react-native';
+import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import {
-  Bell,
-  ChevronRight,
-  Flame,
-  LogOut,
-  RotateCcw,
-  Ruler,
-  Sun,
-  Target,
-  Trash2,
-  User as UserIcon,
-} from 'lucide-react-native';
+import { ArrowDown, ArrowUp, ChevronRight } from 'lucide-react-native';
 import type { StatsResponse, Units } from '@plate/shared';
 import { api } from '../../lib/api';
 import { useAuth } from '../../stores/auth';
 import { useSettings, type ThemeMode } from '../../stores/settings';
-import { colors, radius, type } from '../../lib/theme';
+import { colors, type } from '../../lib/theme';
 
 const GOAL_LABEL: Record<string, string> = {
-  lose: 'Lose weight',
+  lose: 'Lose',
   maintain: 'Maintain',
-  gain: 'Gain weight',
+  gain: 'Gain',
   recomp: 'Recomp',
 };
 
-const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
-  { value: 'system', label: 'System' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
-];
+const THEME_LABEL: Record<ThemeMode, string> = {
+  system: 'System',
+  light: 'Light',
+  dark: 'Dark',
+};
 
 export default function YouTab() {
   const insets = useSafeAreaInsets();
@@ -43,28 +31,44 @@ export default function YouTab() {
   const deleteAccount = useAuth((s) => s.deleteAccount);
   const themeMode = useSettings((s) => s.themeMode);
   const setThemeMode = useSettings((s) => s.setThemeMode);
-  const [savingUnits, setSavingUnits] = useState(false);
 
   const units = (user?.units ?? 'metric') as Units;
 
-  // Snapshot card data — keeps the streak + average kcal visible right on
-  // the settings page so the user can see their lifetime at a glance.
   const { data: stats } = useQuery({
-    queryKey: ['me', 'stats', '30d'],
-    queryFn: () => api.get<StatsResponse>('/v1/me/stats?window=30d'),
+    queryKey: ['me', 'stats', '90d'],
+    queryFn: () => api.get<StatsResponse>('/v1/me/stats?window=90d'),
     staleTime: 60_000,
   });
 
+  // ----- Action handlers -----
+
   const onUnitsToggle = async (next: Units) => {
-    if (next === units || savingUnits) return;
-    setSavingUnits(true);
+    if (next === units) return;
     try {
       await updateProfile({ units: next });
     } catch {
       Alert.alert('Could not save', 'Try again.');
-    } finally {
-      setSavingUnits(false);
     }
+  };
+
+  const pickUnits = () => {
+    presentSheet({
+      title: 'Units',
+      options: ['Metric (kg, cm)', 'Imperial (lb, ft)'],
+      values: ['metric', 'imperial'] as const,
+      current: units,
+      onPick: (v) => void onUnitsToggle(v),
+    });
+  };
+
+  const pickTheme = () => {
+    presentSheet({
+      title: 'Theme',
+      options: ['Follow system', 'Light', 'Dark'],
+      values: ['system', 'light', 'dark'] as const,
+      current: themeMode,
+      onPick: (v) => setThemeMode(v),
+    });
   };
 
   const confirmSignOut = () => {
@@ -95,317 +99,157 @@ export default function YouTab() {
     );
   };
 
-  const weightDisplay = user?.weightKg
+  const soon = (feature: string) => () =>
+    Alert.alert(feature, 'Coming soon. We’re working on it.', [{ text: 'OK' }]);
+
+  // ----- Display strings -----
+
+  const weightUnit = units === 'imperial' ? 'lb' : 'kg';
+  const weightValue = user?.weightKg
     ? units === 'imperial'
-      ? `${Math.round(Number(user.weightKg) * 2.20462)} lb`
-      : `${Number(user.weightKg).toFixed(1)} kg`
+      ? Math.round(Number(user.weightKg) * 2.20462).toString()
+      : Number(user.weightKg).toFixed(1)
     : '—';
-  const heightDisplay = user?.heightCm
-    ? units === 'imperial'
-      ? formatFeetInches(user.heightCm)
-      : `${user.heightCm} cm`
-    : '—';
-  const initial = (user?.displayName?.[0] ?? user?.email?.[0] ?? '?').toUpperCase();
+
+  // 90-day weight delta: we don't track weight history yet, so leave this
+  // empty until weight logging ships. Keep the slot to preserve layout.
+  const deltaValue: number | null = null;
+  const streak = stats?.currentStreak ?? 0;
+
+  const targetsValue =
+    user?.dailyKcal && user?.dailyProteinG
+      ? `${user.dailyKcal.toLocaleString()} kcal · ${user.dailyProteinG}g P`
+      : '—';
+  const activitiesValue = user?.activities?.length ? `${user.activities.length} selected` : '—';
+  const goalValue = user?.goal ? (GOAL_LABEL[user.goal] ?? '—') : '—';
+  const themeValue = THEME_LABEL[themeMode];
+  const unitsValue = units === 'imperial' ? 'Imperial' : 'Metric';
 
   return (
     <ScrollView
       style={{ flex: 1, backgroundColor: colors.bg }}
       contentContainerStyle={{
-        paddingTop: insets.top + 24,
-        paddingHorizontal: 20,
+        paddingTop: insets.top + 12,
+        paddingHorizontal: 24,
         paddingBottom: insets.bottom + 32,
       }}
       showsVerticalScrollIndicator={false}
     >
-      {/* Hero */}
-      <View style={{ alignItems: 'center', marginBottom: 24 }}>
-        <View
-          style={{
-            width: 84,
-            height: 84,
-            borderRadius: 42,
-            backgroundColor: colors.accent,
-            alignItems: 'center',
-            justifyContent: 'center',
-            marginBottom: 14,
-          }}
-        >
-          <Text
-            style={{
-              fontSize: 38,
-              fontWeight: '700',
-              color: colors.textInv,
-              lineHeight: 44,
-            }}
-          >
-            {initial}
-          </Text>
-        </View>
-        <Text
-          style={[type.display2, { color: colors.text, textAlign: 'center' }]}
-          numberOfLines={1}
-        >
-          {user?.displayName ?? 'You'}
-        </Text>
-        <Text
-          style={[type.body, { color: colors.text3, marginTop: 4, textAlign: 'center' }]}
-          numberOfLines={1}
-        >
-          {user?.email}
-        </Text>
+      {/* Stat strip — three cells separated by hairlines, no card bg */}
+      <View style={{ flexDirection: 'row', paddingVertical: 22 }}>
+        <StatCell value={weightValue} unit={weightUnit} label="CURRENT" />
+        <Divider vertical />
+        <StatCell
+          value={deltaValue !== null ? Math.abs(deltaValue).toFixed(1) : '—'}
+          label="90-DAY"
+          italic
+          accent
+          icon={
+            deltaValue === null ? null : deltaValue < 0 ? (
+              <ArrowDown size={16} color={colors.accent} strokeWidth={2.6} />
+            ) : (
+              <ArrowUp size={16} color={colors.accent} strokeWidth={2.6} />
+            )
+          }
+        />
+        <Divider vertical />
+        <StatCell value={String(streak)} label="DAY STREAK" />
       </View>
 
-      {/* Lifetime snapshot — the big tappable card the user kept missing. */}
-      <Pressable
-        onPress={() => router.push('/you/stats')}
-        accessibilityRole="button"
-        accessibilityLabel="View your lifetime stats"
-        style={({ pressed }) => ({
-          padding: 20,
-          borderRadius: radius.xl,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
-          transform: [{ scale: pressed ? 0.99 : 1 }],
-        })}
-      >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <Flame size={22} color={colors.accent} strokeWidth={1.8} />
-          <Text
-            style={{
-              ...type.monoSm,
-              color: colors.text3,
-              letterSpacing: 1.4,
-              textTransform: 'uppercase',
-            }}
-          >
-            Your lifetime
-          </Text>
-          <View style={{ flex: 1 }} />
-          <ChevronRight size={20} color={colors.text3} />
-        </View>
+      <Divider />
 
-        <View style={{ flexDirection: 'row', marginTop: 14 }}>
-          <StatCell value={stats?.currentStreak ?? 0} label="day streak" big />
-          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 14 }} />
-          <StatCell value={stats?.avgKcal ?? 0} label="kcal / day (30d)" />
-          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 14 }} />
-          <StatCell value={stats?.totalWorkouts ?? 0} label="workouts" />
-        </View>
+      {/* Settings list — each row is just text + value + chevron, hairline below */}
+      <SettingRow
+        title="Goals & targets"
+        value={targetsValue}
+        onPress={() => router.push('/you/goal')}
+      />
+      <SettingRow
+        title="Activities"
+        value={activitiesValue}
+        onPress={() => router.push('/you/profile')}
+      />
+      <SettingRow title="Goal" value={goalValue} onPress={() => router.push('/you/goal')} />
+      <SettingRow title="Connected apps" value="Not connected" onPress={soon('Connected apps')} />
+      <SettingRow title="Notifications" value="Off" onPress={soon('Notifications')} />
+      <SettingRow title="Theme" value={themeValue} onPress={pickTheme} />
+      <SettingRow title="Units" value={unitsValue} onPress={pickUnits} />
+      <SettingRow title="Privacy" onPress={soon('Privacy')} />
+      <SettingRow title="Redo onboarding" onPress={() => router.push('/(onboarding)/welcome')} />
+      <SettingRow title="Sign out" onPress={confirmSignOut} danger noChevron />
+
+      {/* Delete account — preserved but de-emphasized. Mockup omits it but
+          App Store guidelines (5.1.1(v)) require an in-app delete path. */}
+      <Pressable
+        onPress={confirmDelete}
+        accessibilityRole="button"
+        accessibilityLabel="Delete account"
+        hitSlop={8}
+        style={{ paddingVertical: 28, alignItems: 'flex-start' }}
+      >
+        <Text style={[type.bodySm, { color: colors.text3 }]}>Delete account</Text>
       </Pressable>
 
-      {/* Profile */}
-      <SectionLabel>Profile</SectionLabel>
-      <SectionCard>
-        <Row
-          icon={<UserIcon size={20} color={colors.text2} strokeWidth={1.8} />}
-          title="Body & name"
-          subtitle={`${heightDisplay} · ${weightDisplay}`}
-          onPress={() => router.push('/you/profile')}
-        />
-        <Row
-          icon={<Target size={20} color={colors.text2} strokeWidth={1.8} />}
-          title="Goal"
-          subtitle={`${GOAL_LABEL[user?.goal ?? ''] ?? '—'} · ${user?.dailyKcal ?? '—'} kcal/day`}
-          onPress={() => router.push('/you/goal')}
-        />
-        <Row
-          icon={<RotateCcw size={20} color={colors.text2} strokeWidth={1.8} />}
-          title="Redo onboarding"
-          subtitle="Re-answer the 6 questions from scratch"
-          onPress={() => router.push('/(onboarding)/welcome')}
-        />
-      </SectionCard>
-
-      {/* Preferences */}
-      <SectionLabel>Preferences</SectionLabel>
-      <SectionCard>
-        {/* Appearance — row + segmented control inside one card */}
-        <View
-          style={{
-            borderRadius: radius.xl,
-            backgroundColor: colors.surface,
-            borderWidth: 1,
-            borderColor: colors.border,
-            paddingHorizontal: 18,
-            paddingVertical: 18,
-          }}
-        >
-          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
-            <RowIcon>
-              <Sun size={20} color={colors.text2} strokeWidth={1.8} />
-            </RowIcon>
-            <View style={{ flex: 1 }}>
-              <Text style={[type.body, { color: colors.text }]}>Appearance</Text>
-              <Text style={[type.bodySm, { color: colors.text3, marginTop: 2 }]}>
-                Light, dark, or follow the OS
-              </Text>
-            </View>
-          </View>
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: colors.surface2,
-              borderRadius: radius.full,
-              padding: 3,
-              marginTop: 14,
-            }}
-          >
-            {THEME_OPTIONS.map((opt) => (
-              <Pressable
-                key={opt.value}
-                onPress={() => void setThemeMode(opt.value)}
-                accessibilityRole="radio"
-                accessibilityState={{ selected: themeMode === opt.value }}
-                style={{
-                  flex: 1,
-                  paddingVertical: 8,
-                  borderRadius: 999,
-                  backgroundColor: themeMode === opt.value ? colors.accent : 'transparent',
-                  alignItems: 'center',
-                }}
-              >
-                <Text
-                  style={{
-                    ...type.labelSm,
-                    color: themeMode === opt.value ? colors.textInv : colors.text2,
-                  }}
-                >
-                  {opt.label}
-                </Text>
-              </Pressable>
-            ))}
-          </View>
-        </View>
-
-        <View style={rowStyle()}>
-          <RowIcon>
-            <Ruler size={20} color={colors.text2} strokeWidth={1.8} />
-          </RowIcon>
-          <Text style={[type.body, { color: colors.text, flex: 1 }]}>Units</Text>
-          <View
-            style={{
-              flexDirection: 'row',
-              backgroundColor: colors.surface2,
-              borderRadius: radius.full,
-              padding: 3,
-            }}
-          >
-            <UnitChip
-              label="Metric"
-              active={units === 'metric'}
-              onPress={() => onUnitsToggle('metric')}
-            />
-            <UnitChip
-              label="Imperial"
-              active={units === 'imperial'}
-              onPress={() => onUnitsToggle('imperial')}
-            />
-          </View>
-        </View>
-
-        <View style={[rowStyle(), { opacity: 0.55 }]}>
-          <RowIcon>
-            <Bell size={20} color={colors.text3} strokeWidth={1.8} />
-          </RowIcon>
-          <View style={{ flex: 1 }}>
-            <Text style={[type.body, { color: colors.text2 }]}>Notifications</Text>
-            <Text style={[type.bodySm, { color: colors.text3, marginTop: 2 }]}>
-              Coach nudges — coming soon
-            </Text>
-          </View>
-          <View
-            style={{
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              borderRadius: radius.full,
-              borderWidth: 1,
-              borderColor: colors.border,
-            }}
-          >
-            <Text
-              style={{
-                ...type.monoSm,
-                color: colors.text3,
-                letterSpacing: 1.2,
-                textTransform: 'uppercase',
-              }}
-            >
-              Soon
-            </Text>
-          </View>
-        </View>
-      </SectionCard>
-
-      {/* Account */}
-      <SectionLabel>Account</SectionLabel>
-      <SectionCard>
-        <Row
-          icon={<LogOut size={20} color={colors.text2} strokeWidth={1.8} />}
-          title="Sign out"
-          onPress={confirmSignOut}
-          chevron={false}
-        />
-        <Row
-          icon={<Trash2 size={20} color={colors.danger} strokeWidth={1.8} />}
-          title="Delete account"
-          titleColor={colors.danger}
-          onPress={confirmDelete}
-          chevron={false}
-        />
-      </SectionCard>
-
-      <Text
-        style={{
-          ...type.bodySm,
-          color: colors.text3,
-          marginTop: 28,
-          textAlign: 'center',
-        }}
-      >
+      <Text style={[type.bodySm, { color: colors.text3, textAlign: 'center', marginTop: 16 }]}>
         Plate · 0.0.1
       </Text>
     </ScrollView>
   );
 }
 
-// Function (not const) so it re-reads the mutable `colors` object after a
-// theme switch. A frozen const captures the initial palette and never updates.
-// `width: '100%'` is non-negotiable — without it the Pressable shrinks to its
-// content width and the icon+text stack vertically inside the parent column.
-const rowStyle = () =>
-  ({
-    width: '100%' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    paddingHorizontal: 18,
-    paddingVertical: 18,
-    borderRadius: radius.xl,
-    backgroundColor: colors.surface,
-    borderWidth: 1,
-    borderColor: colors.border,
-  }) as const;
+// ----- Stat strip cells -----
 
-function StatCell({ value, label, big }: { value: number; label: string; big?: boolean }) {
+function StatCell({
+  value,
+  unit,
+  label,
+  italic,
+  accent,
+  icon,
+}: {
+  value: string;
+  unit?: string;
+  label: string;
+  italic?: boolean;
+  accent?: boolean;
+  icon?: React.ReactNode;
+}) {
   return (
-    <View style={{ flex: 1 }}>
-      <Text
-        style={{
-          ...type.display1,
-          color: colors.text,
-          fontSize: big ? 32 : 22,
-          lineHeight: big ? 36 : 26,
-        }}
-      >
-        {value}
-      </Text>
+    <View style={{ flex: 1, alignItems: 'center' }}>
+      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
+        {icon ? <View style={{ alignSelf: 'center', marginRight: 2 }}>{icon}</View> : null}
+        <Text
+          style={{
+            fontFamily: 'Fraunces_400Regular',
+            fontSize: 32,
+            lineHeight: 36,
+            letterSpacing: -0.6,
+            fontStyle: italic ? 'italic' : 'normal',
+            color: accent ? colors.accent : colors.text,
+          }}
+        >
+          {value}
+        </Text>
+        {unit ? (
+          <Text
+            style={{
+              ...type.labelSm,
+              color: colors.text3,
+              marginLeft: 1,
+              fontSize: 13,
+              fontWeight: '500',
+            }}
+          >
+            {unit}
+          </Text>
+        ) : null}
+      </View>
       <Text
         style={{
           ...type.monoSm,
           color: colors.text3,
-          letterSpacing: 1.1,
-          textTransform: 'uppercase',
-          marginTop: 4,
+          letterSpacing: 1.4,
+          marginTop: 6,
         }}
       >
         {label}
@@ -414,121 +258,119 @@ function StatCell({ value, label, big }: { value: number; label: string; big?: b
   );
 }
 
-// Section is now a vertical stack with spacing — each child renders as its
-// own standalone card via ROW_STYLE.
-function SectionCard({ children }: { children: React.ReactNode }) {
-  return <View style={{ marginTop: 8, gap: 10 }}>{children}</View>;
-}
+// ----- Settings row + divider -----
 
-function SectionLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <Text
-      style={{
-        ...type.monoSm,
-        color: colors.text3,
-        letterSpacing: 1.4,
-        textTransform: 'uppercase',
-        marginTop: 24,
-        marginLeft: 6,
-        marginBottom: 4,
-      }}
-    >
-      {children}
-    </Text>
-  );
-}
-
-function RowIcon({ children }: { children: React.ReactNode }) {
-  return (
-    <View
-      style={{
-        width: 44,
-        height: 44,
-        borderRadius: 22,
-        backgroundColor: colors.surface2,
-        alignItems: 'center',
-        justifyContent: 'center',
-        marginRight: 14,
-      }}
-    >
-      {children}
-    </View>
-  );
-}
-
-function Row({
-  icon,
+function SettingRow({
   title,
-  subtitle,
+  value,
   onPress,
-  chevron = true,
-  titleColor,
+  danger,
+  noChevron,
 }: {
-  icon: React.ReactNode;
   title: string;
-  subtitle?: string;
+  value?: string;
   onPress?: () => void;
-  chevron?: boolean;
-  titleColor?: string;
+  danger?: boolean;
+  noChevron?: boolean;
 }) {
   return (
     <Pressable
       onPress={onPress}
+      disabled={!onPress}
+      accessibilityRole={onPress ? 'button' : undefined}
+      accessibilityLabel={title}
       style={({ pressed }) => ({
-        ...rowStyle(),
+        flexDirection: 'row',
+        alignItems: 'center',
+        paddingVertical: 18,
+        borderBottomWidth: StyleSheet_hairlineWidth,
+        borderBottomColor: colors.border,
         opacity: pressed ? 0.6 : 1,
       })}
-      accessibilityRole="button"
-      accessibilityLabel={title}
-    >
-      <RowIcon>{icon}</RowIcon>
-      <View style={{ flex: 1 }}>
-        <Text style={[type.body, { color: titleColor ?? colors.text }]}>{title}</Text>
-        {subtitle ? (
-          <Text style={[type.bodySm, { color: colors.text3, marginTop: 2 }]}>{subtitle}</Text>
-        ) : null}
-      </View>
-      {chevron ? <ChevronRight size={20} color={colors.text3} /> : null}
-    </Pressable>
-  );
-}
-
-function UnitChip({
-  label,
-  active,
-  onPress,
-}: {
-  label: string;
-  active: boolean;
-  onPress: () => void;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      style={{
-        paddingHorizontal: 12,
-        paddingVertical: 6,
-        borderRadius: 999,
-        backgroundColor: active ? colors.accent : 'transparent',
-      }}
-      accessibilityRole="button"
-      accessibilityState={{ selected: active }}
     >
       <Text
         style={{
-          ...type.labelSm,
-          color: active ? colors.textInv : colors.text2,
+          ...type.bodyLg,
+          color: danger ? colors.danger : colors.text,
+          fontWeight: '500',
         }}
       >
-        {label}
+        {title}
       </Text>
+      <View style={{ flex: 1 }} />
+      {value ? (
+        <Text
+          style={{
+            ...type.body,
+            color: colors.text3,
+            marginRight: onPress && !noChevron ? 8 : 0,
+          }}
+          numberOfLines={1}
+        >
+          {value}
+        </Text>
+      ) : null}
+      {onPress && !noChevron && !danger ? <ChevronRight size={20} color={colors.text3} /> : null}
     </Pressable>
   );
 }
 
-function formatFeetInches(cm: number): string {
-  const totalInches = cm / 2.54;
-  const feet = Math.floor(totalInches / 12);
-  const inches = Math.round(totalInches - feet * 12);
-  return `${feet}'${inches}"`;
+function Divider({ vertical }: { vertical?: boolean }) {
+  return (
+    <View
+      style={
+        vertical
+          ? {
+              width: StyleSheet_hairlineWidth,
+              backgroundColor: colors.border,
+              alignSelf: 'stretch',
+            }
+          : { height: StyleSheet_hairlineWidth, backgroundColor: colors.border }
+      }
+    />
+  );
+}
+
+// React Native's StyleSheet.hairlineWidth resolves to the thinnest line the
+// device can render (0.33 on @3x, 0.5 on @2x). Imported lazily to avoid a
+// top-of-file dep on StyleSheet just for one constant.
+const StyleSheet_hairlineWidth = 0.5;
+
+// ----- Action sheet helper -----
+
+function presentSheet<T extends string>({
+  title,
+  options,
+  values,
+  current,
+  onPick,
+}: {
+  title: string;
+  options: readonly string[];
+  values: readonly T[];
+  current: T;
+  onPick: (v: T) => void;
+}) {
+  if (Platform.OS === 'ios') {
+    ActionSheetIOS.showActionSheetWithOptions(
+      {
+        title,
+        options: [...options, 'Cancel'],
+        cancelButtonIndex: options.length,
+        userInterfaceStyle: colors.bg === '#0b0b0a' ? 'dark' : 'light',
+      },
+      (idx) => {
+        if (idx >= 0 && idx < values.length) onPick(values[idx]!);
+      },
+    );
+    return;
+  }
+  // Android fallback: plain Alert with a button per option
+  Alert.alert(title, `Currently: ${options[values.indexOf(current)]}`, [
+    ...options.map((label, i) => ({
+      text: label,
+      onPress: () => onPick(values[i]!),
+    })),
+    { text: 'Cancel', style: 'cancel' as const },
+  ]);
 }
