@@ -36,7 +36,6 @@ const QUICK_ADD = [
   'eggs',
   'pasta',
   'broccoli',
-  'beef',
   'onion',
   'garlic',
   'tomato',

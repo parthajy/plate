@@ -87,7 +87,13 @@ async function refresh(): Promise<TokenPair | null> {
 }
 
 async function doFetch<T>(path: string, init: RequestInit, attempt = 0): Promise<T> {
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' };
+  // Only set Content-Type when we actually send a body. Fastify rejects
+  // requests that claim Content-Type: application/json with an empty body
+  // (FST_ERR_CTP_EMPTY_JSON_BODY → 500), which was breaking every DELETE
+  // in the app (pantry item remove, account delete, etc.).
+  const hasBody = init.body !== undefined;
+  const headers: Record<string, string> = {};
+  if (hasBody) headers['Content-Type'] = 'application/json';
   const useAuth = init.auth !== false;
   if (useAuth && inMemoryTokens?.accessToken) {
     headers.Authorization = `Bearer ${inMemoryTokens.accessToken}`;
@@ -96,7 +102,7 @@ async function doFetch<T>(path: string, init: RequestInit, attempt = 0): Promise
   const res = await fetch(`${API_URL}${path}`, {
     method: init.method ?? 'GET',
     headers,
-    ...(init.body !== undefined ? { body: JSON.stringify(init.body) } : {}),
+    ...(hasBody ? { body: JSON.stringify(init.body) } : {}),
     ...(init.signal ? { signal: init.signal } : {}),
   });
 

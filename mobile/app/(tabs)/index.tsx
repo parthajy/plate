@@ -228,7 +228,6 @@ const QUICK_ADD = [
   'rice',
   'onion',
   'broccoli',
-  'beef',
   'pasta',
   'garlic',
   'tomato',
