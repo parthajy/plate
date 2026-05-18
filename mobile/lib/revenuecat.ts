@@ -1,5 +1,5 @@
 import { Platform } from 'react-native';
-import Purchases, { LOG_LEVEL } from 'react-native-purchases';
+import Purchases, { LOG_LEVEL, type PurchasesPackage } from 'react-native-purchases';
 
 // RevenueCat SDK initialisation. Call once at app boot — calling more than
 // once is a no-op on subsequent calls (RC tracks its own configured state).
@@ -72,4 +72,54 @@ export async function resetRevenueCatIdentity(): Promise<void> {
     // logOut throws if already anonymous — that's fine, ignore.
     if (__DEV__) console.warn('[RevenueCat] logOut noop', err);
   }
+}
+
+// Entitlement identifier we set up in the RC dashboard. Single source of
+// truth — change here if you ever rename it in the RC project.
+export const PRO_ENTITLEMENT = 'pro';
+
+/**
+ * Fetch the current "default" offering (set in the RC dashboard) and return
+ * the monthly + annual packages. Returns null if RC isn't configured or
+ * the offering hasn't been published yet — caller should fall back to a
+ * "subscriptions not available" message instead of crashing.
+ */
+export async function fetchProOfferings(): Promise<{
+  monthly: PurchasesPackage | null;
+  annual: PurchasesPackage | null;
+} | null> {
+  if (!configured) return null;
+  try {
+    const offerings = await Purchases.getOfferings();
+    const current = offerings.current;
+    if (!current) return null;
+    return {
+      monthly: current.monthly ?? null,
+      annual: current.annual ?? null,
+    };
+  } catch (err) {
+    if (__DEV__) console.warn('[RevenueCat] fetchProOfferings failed', err);
+    return null;
+  }
+}
+
+/**
+ * Run the native purchase sheet for the given package. Returns true if the
+ * purchase grants the Pro entitlement; throws otherwise (caller surfaces
+ * error to user). Cancellation throws with `userCancelled: true`.
+ */
+export async function purchasePackage(pkg: PurchasesPackage): Promise<boolean> {
+  if (!configured) throw new Error('Purchases not configured');
+  const { customerInfo } = await Purchases.purchasePackage(pkg);
+  return !!customerInfo.entitlements.active[PRO_ENTITLEMENT];
+}
+
+/**
+ * Restore purchases for the current Apple ID / Google account. Used by the
+ * "Restore purchases" link Apple requires on any paywall.
+ */
+export async function restorePurchases(): Promise<boolean> {
+  if (!configured) return false;
+  const customerInfo = await Purchases.restorePurchases();
+  return !!customerInfo.entitlements.active[PRO_ENTITLEMENT];
 }

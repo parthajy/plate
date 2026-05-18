@@ -115,30 +115,35 @@ export default function Welcome() {
                   disabled={apple.inFlight}
                   accessibilityRole="button"
                   accessibilityLabel="Continue with Apple"
-                  style={({ pressed }) => ({
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
-                    backgroundColor: '#000000',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    opacity: apple.inFlight ? 0.5 : pressed ? 0.7 : 1,
-                  })}
+                  hitSlop={6}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 >
-                  {apple.inFlight ? (
-                    <ActivityIndicator color="#ffffff" size="small" />
-                  ) : (
-                    <Text
-                      style={{
-                        color: '#ffffff',
-                        fontSize: 32,
-                        lineHeight: 36,
-                        marginTop: -2,
-                      }}
-                    >
-                      {''}
-                    </Text>
-                  )}
+                  <View
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 32,
+                      backgroundColor: '#000000',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      opacity: apple.inFlight ? 0.5 : 1,
+                    }}
+                  >
+                    {apple.inFlight ? (
+                      <ActivityIndicator color="#ffffff" size="small" />
+                    ) : (
+                      <Text
+                        style={{
+                          color: '#ffffff',
+                          fontSize: 32,
+                          lineHeight: 36,
+                          marginTop: -2,
+                        }}
+                      >
+                        {''}
+                      </Text>
+                    )}
+                  </View>
                 </Pressable>
               ) : null}
 
@@ -148,23 +153,28 @@ export default function Welcome() {
                   disabled={google.inFlight}
                   accessibilityRole="button"
                   accessibilityLabel="Continue with Google"
-                  style={({ pressed }) => ({
-                    width: 64,
-                    height: 64,
-                    borderRadius: 32,
-                    backgroundColor: '#ffffff',
-                    alignItems: 'center',
-                    justifyContent: 'center',
-                    borderWidth: 1,
-                    borderColor: colors.borderHi,
-                    opacity: google.inFlight ? 0.5 : pressed ? 0.7 : 1,
-                  })}
+                  hitSlop={6}
+                  style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
                 >
-                  {google.inFlight ? (
-                    <ActivityIndicator color="#1f1f1f" size="small" />
-                  ) : (
-                    <GoogleGIcon size={28} />
-                  )}
+                  <View
+                    style={{
+                      width: 64,
+                      height: 64,
+                      borderRadius: 32,
+                      backgroundColor: '#ffffff',
+                      alignItems: 'center',
+                      justifyContent: 'center',
+                      borderWidth: 1,
+                      borderColor: colors.borderHi,
+                      opacity: google.inFlight ? 0.5 : 1,
+                    }}
+                  >
+                    {google.inFlight ? (
+                      <ActivityIndicator color="#1f1f1f" size="small" />
+                    ) : (
+                      <GoogleGIcon size={28} />
+                    )}
+                  </View>
                 </Pressable>
               ) : null}
             </View>

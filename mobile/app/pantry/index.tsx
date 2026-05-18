@@ -352,11 +352,17 @@ export default function PantryRecipe() {
           <View
             style={{
               marginTop: 18,
-              padding: 12,
+              padding: 14,
               borderRadius: radius.md,
-              backgroundColor: 'rgba(255,90,90,0.16)',
+              backgroundColor:
+                generate.error instanceof ApiError && generate.error.code === 'BUDGET_EXCEEDED'
+                  ? colors.surface
+                  : 'rgba(255,90,90,0.16)',
               borderWidth: 1,
-              borderColor: colors.danger,
+              borderColor:
+                generate.error instanceof ApiError && generate.error.code === 'BUDGET_EXCEEDED'
+                  ? colors.borderHi
+                  : colors.danger,
             }}
           >
             <Text style={[type.bodySm, { color: colors.text }]}>
@@ -364,6 +370,32 @@ export default function PantryRecipe() {
                 ? generate.error.message
                 : 'Could not generate a recipe. Try again.'}
             </Text>
+            {generate.error instanceof ApiError && generate.error.code === 'BUDGET_EXCEEDED' ? (
+              <Pressable
+                onPress={() => router.push('/paywall')}
+                style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, marginTop: 10 })}
+              >
+                <View
+                  style={{
+                    paddingVertical: 10,
+                    paddingHorizontal: 16,
+                    borderRadius: 999,
+                    backgroundColor: colors.accent,
+                    alignSelf: 'flex-start',
+                  }}
+                >
+                  <Text
+                    style={{
+                      ...type.label,
+                      color: colors.textInv,
+                      fontWeight: '700',
+                    }}
+                  >
+                    Upgrade to Pro
+                  </Text>
+                </View>
+              </Pressable>
+            ) : null}
           </View>
         ) : null}
       </ScrollView>

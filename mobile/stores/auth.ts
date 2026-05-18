@@ -22,6 +22,14 @@ export interface MeResponse {
   dailyFatG: number | null;
   units: string | null;
   timezone: string | null;
+  // Subscription state mirrored from the server. `isPremium` is the
+  // computed entitlement (active + not expired); `subscriptionStatus`
+  // carries the raw RC state for display ("cancelled — until 12 Jun").
+  subscriptionStatus: 'free' | 'active' | 'cancelled' | 'expired' | 'billing_issue' | string;
+  subscriptionExpiresAt: string | null;
+  subscriptionProductId: string | null;
+  subscriptionStore: string | null;
+  isPremium: boolean;
 }
 
 interface AuthState {

@@ -13,6 +13,7 @@ import { foodRoutes } from './routes/food.js';
 import { coachRoutes } from './routes/coach.js';
 import { pantryRoutes } from './routes/pantry.js';
 import { workoutRoutes } from './routes/workouts.js';
+import { webhookRoutes } from './routes/webhooks.js';
 import './types.js';
 
 async function build() {
@@ -63,6 +64,7 @@ async function build() {
   await fastify.register(coachRoutes, { prefix: '/v1/coach' });
   await fastify.register(pantryRoutes, { prefix: '/v1/pantry' });
   await fastify.register(workoutRoutes, { prefix: '/v1/workouts' });
+  await fastify.register(webhookRoutes, { prefix: '/v1/webhooks' });
 
   return fastify;
 }

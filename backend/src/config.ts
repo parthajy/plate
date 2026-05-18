@@ -27,6 +27,12 @@ const ConfigSchema = z.object({
   GOOGLE_CLIENT_ID_ANDROID: z.string().optional(),
   GOOGLE_CLIENT_ID_WEB: z.string().optional(),
 
+  // RevenueCat sends purchase/renewal/cancel events to /v1/webhooks/revenuecat.
+  // We validate the incoming `Authorization: Bearer …` header against this
+  // value. Generate with `openssl rand -hex 32` and set the same string in
+  // the RevenueCat dashboard → Project Settings → Webhooks → Authorization.
+  REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
+
   SENTRY_DSN: z.string().url().optional(),
 });
 

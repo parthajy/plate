@@ -260,32 +260,38 @@ export default function CoachTab() {
           onPress={() => onSend(draft)}
           disabled={!draft.trim() || send.isPending}
           accessibilityLabel="Send to Kai"
-          style={({ pressed }) => {
-            const active = !!draft.trim() && !send.isPending;
-            return {
-              width: 48,
-              height: 48,
-              borderRadius: 24,
-              alignItems: 'center',
-              justifyContent: 'center',
-              // Always-filled. Transparent + faint border vanished in light
-              // mode. Surface bg gives a visible empty state in both themes.
-              backgroundColor: active ? colors.accent : colors.surface,
-              borderWidth: 1.5,
-              borderColor: active ? colors.accent : colors.borderHi,
-              transform: [{ scale: pressed ? 0.92 : 1 }],
-            };
-          }}
+          hitSlop={6}
+          style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
         >
-          {send.isPending ? (
-            <ActivityIndicator color={colors.text2} size="small" />
-          ) : (
-            <ArrowUp
-              size={22}
-              color={draft.trim() ? colors.textInv : colors.text}
-              strokeWidth={2.8}
-            />
-          )}
+          {(() => {
+            const active = !!draft.trim() && !send.isPending;
+            return (
+              <View
+                style={{
+                  width: 48,
+                  height: 48,
+                  borderRadius: 24,
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  // bg/borderRadius MUST live on inner View — the same
+                  // Pressable style-function bug that ate the chip backgrounds.
+                  backgroundColor: active ? colors.accent : colors.surface,
+                  borderWidth: 1.5,
+                  borderColor: active ? colors.accent : colors.borderHi,
+                }}
+              >
+                {send.isPending ? (
+                  <ActivityIndicator color={colors.text2} size="small" />
+                ) : (
+                  <ArrowUp
+                    size={22}
+                    color={active ? colors.textInv : colors.text2}
+                    strokeWidth={2.8}
+                  />
+                )}
+              </View>
+            );
+          })()}
         </Pressable>
       </View>
     </KeyboardAvoidingView>

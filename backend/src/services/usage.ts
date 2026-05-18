@@ -2,6 +2,7 @@ import { and, eq, gte, sql } from 'drizzle-orm';
 import { db } from '../db/client.js';
 import { usageEvents } from '../db/schema.js';
 import { BudgetExceededError } from '../lib/errors.js';
+import { getUserEntitlement } from './subscription.js';
 
 // Per-call cost estimates ($/M tokens for claude-sonnet-4-6 today).
 // Used to fill usage_events.est_cost_usd — informational, not load-bearing.
@@ -10,16 +11,20 @@ const OUTPUT_USD_PER_M = 15.0;
 
 export type UsageKind = 'scan' | 'recipe' | 'coach';
 
-// Daily caps per user. Free-tier numbers — the universal cap until
-// monetization ships. When the paywall is on, premium users will get the
-// higher cap (30 / 20 / 50) via an `isPremium` branch here.
-//
-// At 1000 free users worst-case (everyone maxing out), this cap holds AI
-// spend to ~$95/day. Realistic 20% DAU is ~$15/day.
-const DAILY_CAPS: Record<UsageKind, number> = {
+// Daily caps per user, branched on subscription. Free protects costs while
+// premium ($9.99/mo) buys generous-but-bounded headroom. Worst-case cost
+// at 1000 free users hitting their caps: ~$95/day. Premium per-user at cap:
+// ~$1/day in AI cost (vs $7.50 net revenue after Apple's cut).
+const FREE_CAPS: Record<UsageKind, number> = {
   scan: 3,
   recipe: 1,
   coach: 10,
+};
+
+const PREMIUM_CAPS: Record<UsageKind, number> = {
+  scan: 30,
+  recipe: 20,
+  coach: 50,
 };
 
 function startOfTodayUtc(): Date {
@@ -33,7 +38,8 @@ function startOfTodayUtc(): Date {
  * than to swallow another paid call.
  */
 export async function assertWithinBudget(userId: string, kind: UsageKind): Promise<void> {
-  const cap = DAILY_CAPS[kind];
+  const { isPremium } = await getUserEntitlement(userId);
+  const cap = (isPremium ? PREMIUM_CAPS : FREE_CAPS)[kind];
   const start = startOfTodayUtc();
   const result = await db
     .select({ n: sql<number>`count(*)::int` })

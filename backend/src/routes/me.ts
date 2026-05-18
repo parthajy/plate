@@ -16,6 +16,7 @@ import { db } from '../db/client.js';
 import { foodLogs, foods, profiles, users, workouts } from '../db/schema.js';
 import { NotFoundError, UnauthorizedError } from '../lib/errors.js';
 import { requireAuth } from '../lib/auth-middleware.js';
+import { isUserPremium } from '../services/subscription.js';
 
 const PatchUserSchema = z.object({
   displayName: z.string().min(1).max(64).optional(),
@@ -47,6 +48,10 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
         dailyFatG: profiles.dailyFatG,
         units: profiles.units,
         timezone: profiles.timezone,
+        subscriptionStatus: users.subscriptionStatus,
+        subscriptionExpiresAt: users.subscriptionExpiresAt,
+        subscriptionProductId: users.subscriptionProductId,
+        subscriptionStore: users.subscriptionStore,
       })
       .from(users)
       .leftJoin(profiles, eq(profiles.userId, users.id))
@@ -55,7 +60,13 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
 
     const row = rows[0];
     if (!row) throw new UnauthorizedError('User no longer exists');
-    return row;
+    return {
+      ...row,
+      subscriptionExpiresAt: row.subscriptionExpiresAt
+        ? row.subscriptionExpiresAt.toISOString()
+        : null,
+      isPremium: isUserPremium(row.subscriptionStatus, row.subscriptionExpiresAt),
+    };
   });
 
   fastify.patch('/', async (req) => {

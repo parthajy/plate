@@ -149,6 +149,20 @@ export default function YouTab() {
   const themeValue = THEME_LABEL[themeMode];
   const unitsValue = units === 'imperial' ? 'Imperial' : 'Metric';
 
+  // Subscription label: shows current plan + a hint about cancellation
+  // window when applicable. Free shows the upgrade nudge.
+  const subscriptionValue = (() => {
+    if (!user) return '—';
+    if (user.isPremium) {
+      if (user.subscriptionStatus === 'cancelled' && user.subscriptionExpiresAt) {
+        const d = new Date(user.subscriptionExpiresAt);
+        return `Until ${d.toLocaleDateString()}`;
+      }
+      return 'Active';
+    }
+    return 'Free';
+  })();
+
   return (
     // Outer View carries the bg so the safe-area zone has an opaque backdrop
     // and scrolled content can't appear to "leak" into the status-bar text.
@@ -279,6 +293,15 @@ export default function YouTab() {
           title="Body & activities"
           value={bodyValue}
           onPress={() => router.push('/you/profile')}
+          isLast
+        />
+
+        {/* ─── SUBSCRIPTION ─── */}
+        <SectionHeader>Subscription</SectionHeader>
+        <SettingRow
+          title={user?.isPremium ? 'Plate Pro' : 'Upgrade to Pro'}
+          value={subscriptionValue}
+          onPress={() => router.push('/paywall')}
           isLast
         />
 

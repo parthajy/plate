@@ -24,6 +24,17 @@ export const users = pgTable('users', {
   appleSub: text('apple_sub').unique(),
   googleSub: text('google_sub').unique(),
   displayName: text('display_name'),
+
+  // RevenueCat-synced subscription state. `status` is the source of truth
+  // for `isPremium` (active = entitled). `expires_at` lets us catch silent
+  // expiries between webhook deliveries. `product_id` and `store` are
+  // diagnostic — knowing which product/marketplace someone bought from
+  // helps support & analytics without an extra round-trip to RC.
+  subscriptionStatus: text('subscription_status').notNull().default('free'),
+  subscriptionExpiresAt: timestamp('subscription_expires_at', { withTimezone: true }),
+  subscriptionProductId: text('subscription_product_id'),
+  subscriptionStore: text('subscription_store'),
+
   createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
   updatedAt: timestamp('updated_at', { withTimezone: true }).notNull().defaultNow(),
 });
