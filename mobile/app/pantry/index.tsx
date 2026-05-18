@@ -12,7 +12,7 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus } from 'lucide-react-native';
+import { ChevronLeft, Plus, X as XIcon } from 'lucide-react-native';
 import type {
   MealType,
   PantryItem,
@@ -86,6 +86,11 @@ export default function PantryRecipe() {
         return { items: [...existing, created] };
       });
     },
+    onSettled: () => {
+      // Force a refetch so the UI reflects whatever the server actually has,
+      // not just the optimistic state. Cheap insurance against drift.
+      queryClient.invalidateQueries({ queryKey: ['pantry', 'items'] });
+    },
   });
 
   const removeItem = useMutation({
@@ -99,6 +104,9 @@ export default function PantryRecipe() {
     },
     onError: (_e, _v, ctx) => {
       if (ctx?.prev) queryClient.setQueryData(['pantry', 'items'], ctx.prev);
+    },
+    onSettled: () => {
+      queryClient.invalidateQueries({ queryKey: ['pantry', 'items'] });
     },
   });
 
@@ -389,6 +397,13 @@ export default function PantryRecipe() {
 //   filled  — solid accent bg, dark text   (used for items in your pantry — tap to remove)
 //   outline — page bg, accent-color border (used for empty-state Quick Add — tap to add)
 
+// Why the JSX-child pattern (not children-as-function): a callback-form
+// child on Pressable can swallow the press event in some RN/Hermes
+// combinations — the chip RENDERS but onPress never fires when the user
+// taps inside it. Switching to a plain View child + a small XIcon inside
+// filled chips makes both the visual and the interactive contract obvious:
+// the X says "tap to remove", and the hit area is the entire pill.
+
 function IngredientChip({
   label,
   onPress,
@@ -400,80 +415,104 @@ function IngredientChip({
 }) {
   const filled = variant === 'filled';
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
-      {({ pressed }) => (
-        <View
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityLabel={filled ? `Remove ${label}` : `Add ${label}`}
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: filled ? 8 : 0,
+          paddingVertical: 9,
+          paddingLeft: 16,
+          paddingRight: filled ? 10 : 16,
+          borderRadius: 999,
+          backgroundColor: filled ? colors.accent : 'transparent',
+          borderWidth: filled ? 0 : 1.5,
+          borderColor: colors.accent,
+        }}
+      >
+        <Text
           style={{
-            paddingVertical: 9,
-            paddingHorizontal: 16,
-            borderRadius: 999,
-            backgroundColor: filled ? colors.accent : 'transparent',
-            borderWidth: filled ? 0 : 1.5,
-            borderColor: colors.accent,
-            opacity: pressed ? 0.7 : 1,
+            fontSize: 15,
+            color: filled ? colors.textInv : colors.text,
+            fontWeight: '600',
+            textTransform: 'capitalize',
           }}
         >
-          <Text
+          {label}
+        </Text>
+        {filled ? (
+          <View
             style={{
-              fontSize: 15,
-              color: filled ? colors.textInv : colors.text,
-              fontWeight: '600',
-              textTransform: 'capitalize',
+              width: 18,
+              height: 18,
+              borderRadius: 9,
+              backgroundColor: 'rgba(0,0,0,0.18)',
+              alignItems: 'center',
+              justifyContent: 'center',
             }}
           >
-            {label}
-          </Text>
-        </View>
-      )}
+            <XIcon size={11} color={colors.textInv} strokeWidth={3} />
+          </View>
+        ) : null}
+      </View>
     </Pressable>
   );
 }
 
 function MutedChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable onPress={onPress}>
-      {({ pressed }) => (
-        <View
-          style={{
-            paddingVertical: 9,
-            paddingHorizontal: 16,
-            borderRadius: 999,
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderColor: colors.text3,
-            opacity: pressed ? 0.6 : 1,
-          }}
-        >
-          <Text style={{ fontSize: 15, color: colors.text3, fontWeight: '600' }}>{label}</Text>
-        </View>
-      )}
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+    >
+      <View
+        style={{
+          paddingVertical: 9,
+          paddingHorizontal: 16,
+          borderRadius: 999,
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderColor: colors.text3,
+        }}
+      >
+        <Text style={{ fontSize: 15, color: colors.text3, fontWeight: '600' }}>{label}</Text>
+      </View>
     </Pressable>
   );
 }
 
 function AddChip({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable onPress={onPress} accessibilityLabel="Add ingredient">
-      {({ pressed }) => (
-        <View
-          style={{
-            flexDirection: 'row',
-            alignItems: 'center',
-            gap: 6,
-            paddingVertical: 9,
-            paddingHorizontal: 14,
-            borderRadius: 999,
-            backgroundColor: 'transparent',
-            borderWidth: 1.5,
-            borderColor: colors.text3,
-            borderStyle: 'dashed',
-            opacity: pressed ? 0.6 : 1,
-          }}
-        >
-          <Plus size={16} color={colors.text2} strokeWidth={2.6} />
-          <Text style={{ fontSize: 15, color: colors.text2, fontWeight: '600' }}>Add</Text>
-        </View>
-      )}
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityLabel="Add ingredient"
+      style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          gap: 6,
+          paddingVertical: 9,
+          paddingHorizontal: 14,
+          borderRadius: 999,
+          backgroundColor: 'transparent',
+          borderWidth: 1.5,
+          borderColor: colors.text3,
+          borderStyle: 'dashed',
+        }}
+      >
+        <Plus size={16} color={colors.text2} strokeWidth={2.6} />
+        <Text style={{ fontSize: 15, color: colors.text2, fontWeight: '600' }}>Add</Text>
+      </View>
     </Pressable>
   );
 }
@@ -488,30 +527,33 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }}>
-      {({ pressed }) => (
-        <View
+    <Pressable
+      onPress={onPress}
+      hitSlop={6}
+      accessibilityRole="button"
+      accessibilityState={{ selected }}
+      style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1 })}
+    >
+      <View
+        style={{
+          paddingVertical: 9,
+          paddingHorizontal: 16,
+          borderRadius: 999,
+          backgroundColor: selected ? colors.accent : 'transparent',
+          borderWidth: 1.5,
+          borderColor: selected ? colors.accent : colors.text3,
+        }}
+      >
+        <Text
           style={{
-            paddingVertical: 9,
-            paddingHorizontal: 16,
-            borderRadius: 999,
-            backgroundColor: selected ? colors.accent : 'transparent',
-            borderWidth: 1.5,
-            borderColor: selected ? colors.accent : colors.text3,
-            opacity: pressed ? 0.7 : 1,
+            fontSize: 15,
+            color: selected ? colors.textInv : colors.text,
+            fontWeight: '600',
           }}
         >
-          <Text
-            style={{
-              fontSize: 15,
-              color: selected ? colors.textInv : colors.text,
-              fontWeight: '600',
-            }}
-          >
-            {label}
-          </Text>
-        </View>
-      )}
+          {label}
+        </Text>
+      </View>
     </Pressable>
   );
 }

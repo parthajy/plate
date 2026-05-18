@@ -361,10 +361,10 @@ function FromYourFridgeCard({
             : `${pantryItems.length} in your pantry. Add more, or tap Generate.`}
         </Text>
 
-        {/* Quick-add chips. NOTE: layout MUST live on an inner View, not the
-            Pressable's style function — Pressable inconsistently applies
-            flexDirection/bg/borderRadius when returned from the style
-            callback. Same pattern bug bit the recipe page chips. */}
+        {/* Quick-add chips. JSX child (not children-as-function) because the
+            callback form can swallow press events in some RN builds —
+            cost us a whole iteration of "tap doesn't remove" on the
+            pantry page. Layout lives on the inner View. */}
         {visible.length > 0 ? (
           <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8, marginTop: 14 }}>
             {visible.map((q) => (
@@ -372,95 +372,93 @@ function FromYourFridgeCard({
                 key={q}
                 onPress={() => addItem.mutate(q)}
                 disabled={addItem.isPending}
+                hitSlop={6}
                 accessibilityLabel={`Add ${q}`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
               >
-                {({ pressed }) => (
-                  <View
+                <View
+                  style={{
+                    flexDirection: 'row',
+                    alignItems: 'center',
+                    gap: 6,
+                    paddingVertical: 8,
+                    paddingHorizontal: 14,
+                    borderRadius: 999,
+                    backgroundColor: colors.bg,
+                    borderWidth: 1.5,
+                    borderColor: colors.text3,
+                  }}
+                >
+                  <Text style={{ fontSize: 14 }}>{foodEmoji(q)}</Text>
+                  <Text
                     style={{
-                      flexDirection: 'row',
-                      alignItems: 'center',
-                      gap: 6,
-                      paddingVertical: 8,
-                      paddingHorizontal: 14,
-                      borderRadius: 999,
-                      backgroundColor: colors.bg,
-                      borderWidth: 1.5,
-                      borderColor: colors.text3,
-                      opacity: pressed ? 0.6 : 1,
+                      fontSize: 14,
+                      color: colors.text,
+                      fontWeight: '600',
+                      textTransform: 'capitalize',
                     }}
                   >
-                    <Text style={{ fontSize: 14 }}>{foodEmoji(q)}</Text>
-                    <Text
-                      style={{
-                        fontSize: 14,
-                        color: colors.text,
-                        fontWeight: '600',
-                        textTransform: 'capitalize',
-                      }}
-                    >
-                      {q}
-                    </Text>
-                  </View>
-                )}
+                    {q}
+                  </Text>
+                </View>
               </Pressable>
             ))}
             {overflow > 0 ? (
-              <Pressable onPress={onOpen} accessibilityLabel={`${overflow} more — open pantry`}>
-                {({ pressed }) => (
-                  <View
-                    style={{
-                      paddingVertical: 8,
-                      paddingHorizontal: 14,
-                      borderRadius: 999,
-                      backgroundColor: 'transparent',
-                      borderWidth: 1.5,
-                      borderColor: colors.text3,
-                      opacity: pressed ? 0.6 : 1,
-                    }}
-                  >
-                    <Text style={{ fontSize: 14, color: colors.text3, fontWeight: '600' }}>
-                      +{overflow}
-                    </Text>
-                  </View>
-                )}
+              <Pressable
+                onPress={onOpen}
+                hitSlop={6}
+                accessibilityLabel={`${overflow} more — open pantry`}
+                style={({ pressed }) => ({ opacity: pressed ? 0.6 : 1 })}
+              >
+                <View
+                  style={{
+                    paddingVertical: 8,
+                    paddingHorizontal: 14,
+                    borderRadius: 999,
+                    backgroundColor: 'transparent',
+                    borderWidth: 1.5,
+                    borderColor: colors.text3,
+                  }}
+                >
+                  <Text style={{ fontSize: 14, color: colors.text3, fontWeight: '600' }}>
+                    +{overflow}
+                  </Text>
+                </View>
               </Pressable>
             ) : null}
           </View>
         ) : null}
 
-        {/* Generate CTA — same pattern. Layout + bg on inner View. */}
+        {/* Generate CTA — same pattern. JSX child + layout on inner View. */}
         <Pressable
           onPress={onOpen}
           accessibilityRole="button"
           accessibilityLabel="Generate a recipe"
-          style={{ marginTop: 18 }}
+          style={({ pressed }) => ({ marginTop: 18, opacity: pressed ? 0.85 : 1 })}
         >
-          {({ pressed }) => (
-            <View
+          <View
+            style={{
+              height: 50,
+              borderRadius: 999,
+              backgroundColor: colors.accent,
+              flexDirection: 'row',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 10,
+            }}
+          >
+            <Text
               style={{
-                height: 50,
-                borderRadius: 999,
-                backgroundColor: colors.accent,
-                flexDirection: 'row',
-                alignItems: 'center',
-                justifyContent: 'center',
-                gap: 10,
-                opacity: pressed ? 0.85 : 1,
+                color: colors.textInv,
+                fontSize: 16,
+                fontWeight: '700',
+                letterSpacing: 0.2,
               }}
             >
-              <Text
-                style={{
-                  color: colors.textInv,
-                  fontSize: 16,
-                  fontWeight: '700',
-                  letterSpacing: 0.2,
-                }}
-              >
-                Generate a recipe
-              </Text>
-              <ArrowRight size={18} color={colors.textInv} strokeWidth={2.8} />
-            </View>
-          )}
+              Generate a recipe
+            </Text>
+            <ArrowRight size={18} color={colors.textInv} strokeWidth={2.8} />
+          </View>
         </Pressable>
       </View>
     </View>
