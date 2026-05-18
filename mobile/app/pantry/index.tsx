@@ -86,15 +86,20 @@ export default function PantryRecipe() {
         return { items: [...existing, created] };
       });
     },
-    onSettled: () => {
-      // Force a refetch so the UI reflects whatever the server actually has,
-      // not just the optimistic state. Cheap insurance against drift.
-      queryClient.invalidateQueries({ queryKey: ['pantry', 'items'] });
-    },
   });
 
   const removeItem = useMutation({
-    mutationFn: (id: string) => api.delete(`/v1/pantry/items/${id}`),
+    // 404 = item already gone (perhaps a stale id, perhaps the server raced).
+    // Treat as success so the optimistic remove sticks instead of rolling
+    // back and making the chip "flicker back."
+    mutationFn: async (id: string) => {
+      try {
+        await api.delete(`/v1/pantry/items/${id}`);
+      } catch (e) {
+        if (e instanceof ApiError && e.status === 404) return;
+        throw e;
+      }
+    },
     onMutate: (id: string) => {
       const prev = queryClient.getQueryData<PantryListResponse>(['pantry', 'items']);
       queryClient.setQueryData<PantryListResponse>(['pantry', 'items'], (curr) => ({
@@ -102,11 +107,19 @@ export default function PantryRecipe() {
       }));
       return { prev };
     },
-    onError: (_e, _v, ctx) => {
+    onError: (err, _v, ctx) => {
+      // Revert + surface the real error so we can see what the server said.
+      // (Silent failures were making "chip flickers back" feel like a UI bug
+      // when the server was actually rejecting the request.)
       if (ctx?.prev) queryClient.setQueryData(['pantry', 'items'], ctx.prev);
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['pantry', 'items'] });
+      Alert.alert(
+        'Could not remove',
+        err instanceof ApiError
+          ? `${err.status} ${err.code}: ${err.message}`
+          : err instanceof Error
+            ? err.message
+            : 'Unknown error',
+      );
     },
   });
 
