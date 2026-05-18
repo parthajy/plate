@@ -1,8 +1,17 @@
-import { ActionSheetIOS, Alert, Platform, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActionSheetIOS,
+  Alert,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  Text,
+  View,
+} from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ArrowDown, ArrowUp, ChevronRight, Flame } from 'lucide-react-native';
+import { ChevronRight } from 'lucide-react-native';
 import type { StatsResponse, Units } from '@plate/shared';
 import { api } from '../../lib/api';
 import { useAuth } from '../../stores/auth';
@@ -111,210 +120,362 @@ export default function YouTab() {
       : Number(user.weightKg).toFixed(1)
     : '—';
 
-  // 90-day weight delta: we don't track weight history yet, so leave this
-  // empty until weight logging ships. Keep the slot to preserve layout.
-  const deltaValue: number | null = null;
-  const streak = stats?.currentStreak ?? 0;
+  const heightCm = user?.heightCm;
+  const heightDisplay = heightCm
+    ? units === 'imperial'
+      ? formatFeetInches(heightCm)
+      : `${heightCm} cm`
+    : null;
 
+  const streak = stats?.currentStreak ?? 0;
+  const avgKcal = Math.round(stats?.avgKcal ?? 0);
+  const totalWorkouts = stats?.totalWorkouts ?? 0;
+  const daysLogged = stats?.daysLogged ?? 0;
+
+  const goalLabel = user?.goal ? (GOAL_LABEL[user.goal] ?? null) : null;
   const targetsValue =
-    user?.dailyKcal && user?.dailyProteinG
-      ? `${user.dailyKcal.toLocaleString()} kcal · ${user.dailyProteinG}g P`
+    user?.dailyKcal && goalLabel
+      ? `${goalLabel} · ${user.dailyKcal.toLocaleString()} kcal`
+      : user?.dailyKcal
+        ? `${user.dailyKcal.toLocaleString()} kcal`
+        : '—';
+
+  const activitiesCount = user?.activities?.length ?? 0;
+  const bodyValue =
+    user?.weightKg && heightDisplay
+      ? `${weightValue} ${weightUnit} · ${heightDisplay}${activitiesCount > 0 ? ` · ${activitiesCount} activit${activitiesCount === 1 ? 'y' : 'ies'}` : ''}`
       : '—';
-  const activitiesValue = user?.activities?.length ? `${user.activities.length} selected` : '—';
-  const goalValue = user?.goal ? (GOAL_LABEL[user.goal] ?? '—') : '—';
+
   const themeValue = THEME_LABEL[themeMode];
   const unitsValue = units === 'imperial' ? 'Imperial' : 'Metric';
 
   return (
-    <ScrollView
-      style={{ flex: 1, backgroundColor: colors.bg }}
-      contentContainerStyle={{
-        paddingTop: insets.top + 12,
-        paddingHorizontal: 24,
-        paddingBottom: insets.bottom + 32,
-      }}
-      showsVerticalScrollIndicator={false}
-    >
-      {/* Stat strip — three cells separated by hairlines, no card bg */}
-      <View style={{ flexDirection: 'row', paddingVertical: 22 }}>
-        <StatCell value={weightValue} unit={weightUnit} label="CURRENT" />
-        <Divider vertical />
-        <StatCell
-          value={deltaValue !== null ? Math.abs(deltaValue).toFixed(1) : '—'}
-          label="90-DAY"
-          italic
-          accent
-          icon={
-            deltaValue === null ? null : deltaValue < 0 ? (
-              <ArrowDown size={16} color={colors.accent} strokeWidth={2.6} />
-            ) : (
-              <ArrowUp size={16} color={colors.accent} strokeWidth={2.6} />
-            )
-          }
-        />
-        <Divider vertical />
-        <StatCell value={String(streak)} label="DAY STREAK" />
-      </View>
-
-      <Divider />
-
-      {/* Lifetime snapshot — tappable card surfacing the 3 most-loved
-          metrics. Keeps the user oriented without making them dig into
-          /you/stats. */}
-      <Pressable
-        onPress={() => router.push('/you/stats')}
-        accessibilityRole="button"
-        accessibilityLabel="View your lifetime stats"
-        style={({ pressed }) => ({
-          marginTop: 18,
-          marginBottom: 6,
-          padding: 18,
-          borderRadius: radius.xl,
-          backgroundColor: colors.surface,
-          borderWidth: 1,
-          borderColor: colors.border,
-          transform: [{ scale: pressed ? 0.99 : 1 }],
-        })}
+    // Outer View carries the bg so the safe-area zone has an opaque backdrop
+    // and scrolled content can't appear to "leak" into the status-bar text.
+    <View style={{ flex: 1, backgroundColor: colors.bg }}>
+      <ScrollView
+        contentContainerStyle={{
+          paddingTop: insets.top + 14,
+          paddingHorizontal: 22,
+          paddingBottom: insets.bottom + 32,
+        }}
+        showsVerticalScrollIndicator={false}
       >
-        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
-          <Flame size={18} color={colors.accent} strokeWidth={1.8} />
-          <Text
-            style={{
-              ...type.monoSm,
-              color: colors.text2,
-              letterSpacing: 1.4,
-              textTransform: 'uppercase',
-              flex: 1,
-            }}
-          >
-            Your lifetime
-          </Text>
-          <ChevronRight size={18} color={colors.text3} />
-        </View>
-        <View style={{ flexDirection: 'row', marginTop: 14 }}>
-          <LifetimeStat value={streak} label="day streak" big />
-          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 12 }} />
-          <LifetimeStat value={Math.round(stats?.avgKcal ?? 0)} label="kcal / day" />
-          <View style={{ width: 1, backgroundColor: colors.border, marginHorizontal: 12 }} />
-          <LifetimeStat value={stats?.totalWorkouts ?? 0} label="workouts" />
-        </View>
-      </Pressable>
-
-      {/* Settings list — each row is just text + value + chevron, hairline below */}
-      <SettingRow
-        title="Goals & targets"
-        value={targetsValue}
-        onPress={() => router.push('/you/goal')}
-      />
-      <SettingRow
-        title="Activities"
-        value={activitiesValue}
-        onPress={() => router.push('/you/profile')}
-      />
-      <SettingRow title="Goal" value={goalValue} onPress={() => router.push('/you/goal')} />
-      <SettingRow title="Connected apps" value="Not connected" onPress={soon('Connected apps')} />
-      <SettingRow title="Notifications" value="Off" onPress={soon('Notifications')} />
-      <SettingRow title="Theme" value={themeValue} onPress={pickTheme} />
-      <SettingRow title="Units" value={unitsValue} onPress={pickUnits} />
-      <SettingRow title="Privacy" onPress={soon('Privacy')} />
-      <SettingRow title="Redo onboarding" onPress={() => router.push('/(onboarding)/welcome')} />
-      <SettingRow title="Sign out" onPress={confirmSignOut} danger noChevron />
-
-      {/* Delete account — preserved but de-emphasized. Mockup omits it but
-          App Store guidelines (5.1.1(v)) require an in-app delete path. */}
-      <Pressable
-        onPress={confirmDelete}
-        accessibilityRole="button"
-        accessibilityLabel="Delete account"
-        hitSlop={8}
-        style={{ paddingVertical: 28, alignItems: 'flex-start' }}
-      >
-        <Text style={[type.bodySm, { color: colors.text3 }]}>Delete account</Text>
-      </Pressable>
-
-      <Text style={[type.bodySm, { color: colors.text3, textAlign: 'center', marginTop: 16 }]}>
-        Plate · 0.0.1
-      </Text>
-    </ScrollView>
-  );
-}
-
-// ----- Stat strip cells -----
-
-function StatCell({
-  value,
-  unit,
-  label,
-  italic,
-  accent,
-  icon,
-}: {
-  value: string;
-  unit?: string;
-  label: string;
-  italic?: boolean;
-  accent?: boolean;
-  icon?: React.ReactNode;
-}) {
-  return (
-    <View style={{ flex: 1, alignItems: 'center' }}>
-      <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 4 }}>
-        {icon ? <View style={{ alignSelf: 'center', marginRight: 2 }}>{icon}</View> : null}
+        {/* ─── Hero: a single big stat (weight) + streak chip ─── */}
         <Text
           style={{
-            fontFamily: 'Fraunces_400Regular',
-            fontSize: 32,
-            lineHeight: 36,
-            letterSpacing: -0.6,
-            fontStyle: italic ? 'italic' : 'normal',
-            color: accent ? colors.accent : colors.text,
+            ...type.monoSm,
+            color: colors.text3,
+            letterSpacing: 1.4,
+            textTransform: 'uppercase',
           }}
         >
-          {value}
+          You
         </Text>
-        {unit ? (
+
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'flex-end',
+            marginTop: 8,
+            gap: 6,
+          }}
+        >
           <Text
             style={{
-              ...type.labelSm,
-              color: colors.text3,
-              marginLeft: 1,
-              fontSize: 13,
-              fontWeight: '500',
+              fontFamily: 'Fraunces_400Regular',
+              fontSize: 64,
+              lineHeight: 64,
+              letterSpacing: -1.8,
+              color: colors.text,
             }}
           >
-            {unit}
+            {weightValue}
           </Text>
-        ) : null}
-      </View>
-      <Text
+          <Text
+            style={{
+              fontFamily: 'Fraunces_400Regular',
+              fontSize: 22,
+              lineHeight: 28,
+              color: colors.text3,
+              marginBottom: 6,
+            }}
+          >
+            {weightUnit}
+          </Text>
+        </View>
+
+        {/* Subline with streak — replaces the redundant DAY STREAK stat cell */}
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, marginTop: 8 }}>
+          <View
+            style={{
+              paddingHorizontal: 10,
+              paddingVertical: 4,
+              borderRadius: 999,
+              backgroundColor: colors.accent,
+            }}
+          >
+            <Text
+              style={{
+                fontSize: 12,
+                fontWeight: '700',
+                color: colors.textInv,
+                letterSpacing: 0.2,
+              }}
+            >
+              {streak} day streak
+            </Text>
+          </View>
+          <Text style={[type.bodySm, { color: colors.text3 }]}>· current weight</Text>
+        </View>
+
+        {/* ─── Lifetime card (no streak duplication — that's in the hero now) ─── */}
+        <Pressable
+          onPress={() => router.push('/you/stats')}
+          accessibilityRole="button"
+          accessibilityLabel="View your lifetime stats"
+          style={({ pressed }) => ({
+            marginTop: 26,
+            paddingVertical: 16,
+            paddingHorizontal: 18,
+            borderRadius: radius.xl,
+            backgroundColor: colors.surface,
+            borderWidth: 1,
+            borderColor: colors.border,
+            opacity: pressed ? 0.85 : 1,
+          })}
+        >
+          <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+            <Text
+              style={{
+                ...type.monoSm,
+                color: colors.text2,
+                letterSpacing: 1.4,
+                textTransform: 'uppercase',
+                flex: 1,
+              }}
+            >
+              Your lifetime
+            </Text>
+            <ChevronRight size={18} color={colors.text3} />
+          </View>
+          <View style={{ flexDirection: 'row', marginTop: 14, gap: 12 }}>
+            <LifetimeStat value={avgKcal.toLocaleString()} label="kcal / day" />
+            <View style={{ width: 1, backgroundColor: colors.border }} />
+            <LifetimeStat value={String(totalWorkouts)} label="workouts" />
+            <View style={{ width: 1, backgroundColor: colors.border }} />
+            <LifetimeStat value={String(daysLogged)} label="days logged" />
+          </View>
+        </Pressable>
+
+        {/* ─── PROFILE ─── */}
+        <SectionHeader>Profile</SectionHeader>
+        <SettingRow
+          title="Goals & targets"
+          value={targetsValue}
+          onPress={() => router.push('/you/goal')}
+        />
+        <SettingRow
+          title="Body & activities"
+          value={bodyValue}
+          onPress={() => router.push('/you/profile')}
+          isLast
+        />
+
+        {/* ─── PREFERENCES ─── */}
+        <SectionHeader>Preferences</SectionHeader>
+        <SettingRow title="Theme" value={themeValue} onPress={pickTheme} />
+        <SettingRow title="Units" value={unitsValue} onPress={pickUnits} />
+        <SettingRow title="Notifications" value="Off" onPress={soon('Notifications')} />
+        <SettingRow
+          title="Connected apps"
+          value="Not connected"
+          onPress={soon('Connected apps')}
+          isLast
+        />
+
+        {/* ─── ACCOUNT ─── */}
+        <SectionHeader>Account</SectionHeader>
+        <SettingRow title="Privacy" onPress={soon('Privacy')} />
+        <SettingRow
+          title="Redo onboarding"
+          onPress={() => router.push('/(onboarding)/welcome')}
+          isLast
+        />
+
+        {/* ─── Sign out / delete / version ─── */}
+        <View style={{ alignItems: 'center', marginTop: 36 }}>
+          <Pressable
+            onPress={confirmSignOut}
+            accessibilityRole="button"
+            accessibilityLabel="Sign out"
+            hitSlop={10}
+            style={({ pressed }) => ({
+              paddingVertical: 14,
+              paddingHorizontal: 32,
+              borderRadius: 999,
+              borderWidth: 1.5,
+              borderColor: colors.danger,
+              opacity: pressed ? 0.6 : 1,
+            })}
+          >
+            <Text
+              style={{
+                ...type.bodyLg,
+                color: colors.danger,
+                fontWeight: '600',
+              }}
+            >
+              Sign out
+            </Text>
+          </Pressable>
+
+          <Pressable
+            onPress={confirmDelete}
+            accessibilityRole="button"
+            accessibilityLabel="Delete account"
+            hitSlop={10}
+            style={({ pressed }) => ({
+              marginTop: 22,
+              paddingVertical: 6,
+              opacity: pressed ? 0.5 : 1,
+            })}
+          >
+            <Text style={[type.bodySm, { color: colors.text3, textDecorationLine: 'underline' }]}>
+              Delete account
+            </Text>
+          </Pressable>
+
+          <Text style={[type.bodySm, { color: colors.text3, marginTop: 28 }]}>Plate · 0.0.1</Text>
+        </View>
+      </ScrollView>
+
+      {/* Opaque backdrop behind iOS status bar — prevents scrolled content
+          from visually colliding with the clock / TestFlight indicator. */}
+      <View
         style={{
-          ...type.monoSm,
-          color: colors.text3,
-          letterSpacing: 1.4,
-          marginTop: 6,
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: insets.top,
+          backgroundColor: colors.bg,
         }}
-      >
-        {label}
-      </Text>
+        pointerEvents="none"
+      />
     </View>
   );
 }
 
-// ----- Lifetime stat cell -----
+// ─── SettingRow ─────────────────────────────────────────────────────────────
+//
+// Layout is done in an inner View (not the Pressable itself) because
+// Pressable's flex behaviour in RN can collapse to its intrinsic content
+// width — that's how we lost the row layout in the previous build and the
+// chevron started rendering on its own line above the title. The Pressable
+// here just handles the tap target + the hairline divider; the inner View
+// owns the flex row so we can be confident title/value/chevron stay inline.
 
-function LifetimeStat({ value, label, big }: { value: number; label: string; big?: boolean }) {
+function SettingRow({
+  title,
+  value,
+  onPress,
+  danger,
+  isLast,
+}: {
+  title: string;
+  value?: string;
+  onPress?: () => void;
+  danger?: boolean;
+  isLast?: boolean;
+}) {
+  const interactive = !!onPress;
+  return (
+    <Pressable
+      onPress={onPress}
+      disabled={!interactive}
+      accessibilityRole={interactive ? 'button' : undefined}
+      accessibilityLabel={title}
+      style={({ pressed }) => ({
+        borderBottomWidth: isLast ? 0 : StyleSheet.hairlineWidth,
+        borderBottomColor: colors.border,
+        opacity: pressed ? 0.55 : 1,
+      })}
+    >
+      <View
+        style={{
+          flexDirection: 'row',
+          alignItems: 'center',
+          paddingVertical: 16,
+          gap: 12,
+        }}
+      >
+        <Text
+          style={{
+            ...type.bodyLg,
+            color: danger ? colors.danger : colors.text,
+            fontWeight: '500',
+            flex: 1,
+          }}
+          numberOfLines={1}
+        >
+          {title}
+        </Text>
+        {value ? (
+          <Text
+            style={{
+              ...type.body,
+              color: colors.text3,
+              textAlign: 'right',
+              maxWidth: '60%',
+            }}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {value}
+          </Text>
+        ) : null}
+        {interactive ? <ChevronRight size={18} color={colors.text3} /> : null}
+      </View>
+    </Pressable>
+  );
+}
+
+// ─── SectionHeader ──────────────────────────────────────────────────────────
+
+function SectionHeader({ children }: { children: React.ReactNode }) {
+  return (
+    <Text
+      style={{
+        ...type.monoSm,
+        color: colors.text3,
+        letterSpacing: 1.6,
+        textTransform: 'uppercase',
+        marginTop: 32,
+        marginBottom: 4,
+      }}
+    >
+      {children}
+    </Text>
+  );
+}
+
+// ─── LifetimeStat ───────────────────────────────────────────────────────────
+
+function LifetimeStat({ value, label }: { value: string; label: string }) {
   return (
     <View style={{ flex: 1 }}>
       <Text
         style={{
           fontFamily: 'Fraunces_400Regular',
-          fontSize: big ? 30 : 22,
-          lineHeight: big ? 34 : 26,
+          fontSize: 24,
+          lineHeight: 28,
           letterSpacing: -0.4,
           color: colors.text,
         }}
+        numberOfLines={1}
       >
-        {value.toLocaleString()}
+        {value}
       </Text>
       <Text
         style={{
@@ -324,6 +485,7 @@ function LifetimeStat({ value, label, big }: { value: number; label: string; big
           textTransform: 'uppercase',
           marginTop: 4,
         }}
+        numberOfLines={1}
       >
         {label}
       </Text>
@@ -331,93 +493,7 @@ function LifetimeStat({ value, label, big }: { value: number; label: string; big
   );
 }
 
-// ----- Settings row + divider -----
-
-function SettingRow({
-  title,
-  value,
-  onPress,
-  danger,
-  noChevron,
-}: {
-  title: string;
-  value?: string;
-  onPress?: () => void;
-  danger?: boolean;
-  noChevron?: boolean;
-}) {
-  return (
-    <Pressable
-      onPress={onPress}
-      disabled={!onPress}
-      accessibilityRole={onPress ? 'button' : undefined}
-      accessibilityLabel={title}
-      style={({ pressed }) => ({
-        // `alignSelf: 'stretch'` + `width: '100%'` belt-and-suspenders so the
-        // Pressable fills the parent column. Without it the Pressable shrinks
-        // to content width and the title/value/chevron stack vertically.
-        alignSelf: 'stretch',
-        width: '100%',
-        flexDirection: 'row',
-        alignItems: 'center',
-        paddingVertical: 18,
-        borderBottomWidth: StyleSheet_hairlineWidth,
-        borderBottomColor: colors.border,
-        opacity: pressed ? 0.6 : 1,
-      })}
-    >
-      <Text
-        style={{
-          ...type.bodyLg,
-          color: danger ? colors.danger : colors.text,
-          fontWeight: '500',
-          flexShrink: 0,
-        }}
-      >
-        {title}
-      </Text>
-      <View style={{ flex: 1, minWidth: 12 }} />
-      {value ? (
-        <Text
-          style={{
-            ...type.body,
-            color: colors.text3,
-            marginRight: onPress && !noChevron ? 8 : 0,
-            flexShrink: 1,
-            textAlign: 'right',
-          }}
-          numberOfLines={1}
-        >
-          {value}
-        </Text>
-      ) : null}
-      {onPress && !noChevron && !danger ? <ChevronRight size={20} color={colors.text3} /> : null}
-    </Pressable>
-  );
-}
-
-function Divider({ vertical }: { vertical?: boolean }) {
-  return (
-    <View
-      style={
-        vertical
-          ? {
-              width: StyleSheet_hairlineWidth,
-              backgroundColor: colors.border,
-              alignSelf: 'stretch',
-            }
-          : { height: StyleSheet_hairlineWidth, backgroundColor: colors.border }
-      }
-    />
-  );
-}
-
-// React Native's StyleSheet.hairlineWidth resolves to the thinnest line the
-// device can render (0.33 on @3x, 0.5 on @2x). Imported lazily to avoid a
-// top-of-file dep on StyleSheet just for one constant.
-const StyleSheet_hairlineWidth = 0.5;
-
-// ----- Action sheet helper -----
+// ─── Action sheet (iOS native sheet, Android Alert fallback) ────────────────
 
 function presentSheet<T extends string>({
   title,
@@ -438,20 +514,32 @@ function presentSheet<T extends string>({
         title,
         options: [...options, 'Cancel'],
         cancelButtonIndex: options.length,
-        userInterfaceStyle: colors.bg === '#0b0b0a' ? 'dark' : 'light',
       },
       (idx) => {
         if (idx >= 0 && idx < values.length) onPick(values[idx]!);
       },
     );
-    return;
+  } else {
+    Alert.alert(
+      title,
+      undefined,
+      [
+        ...options.map((label, i) => ({
+          text: label + (values[i] === current ? '  ✓' : ''),
+          onPress: () => onPick(values[i]!),
+        })),
+        { text: 'Cancel', style: 'cancel' as const },
+      ],
+      { cancelable: true },
+    );
   }
-  // Android fallback: plain Alert with a button per option
-  Alert.alert(title, `Currently: ${options[values.indexOf(current)]}`, [
-    ...options.map((label, i) => ({
-      text: label,
-      onPress: () => onPick(values[i]!),
-    })),
-    { text: 'Cancel', style: 'cancel' as const },
-  ]);
+}
+
+// ─── Helpers ────────────────────────────────────────────────────────────────
+
+function formatFeetInches(cm: number): string {
+  const totalInches = cm / 2.54;
+  const feet = Math.floor(totalInches / 12);
+  const inches = Math.round(totalInches - feet * 12);
+  return `${feet}'${inches}"`;
 }
