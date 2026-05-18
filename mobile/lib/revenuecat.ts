@@ -80,26 +80,48 @@ export const PRO_ENTITLEMENT = 'pro';
 
 /**
  * Fetch the current "default" offering (set in the RC dashboard) and return
- * the monthly + annual packages. Returns null if RC isn't configured or
- * the offering hasn't been published yet — caller should fall back to a
- * "subscriptions not available" message instead of crashing.
+ * the monthly + annual packages. Returns a diagnostic `error` field when
+ * something goes wrong so the paywall can surface it instead of swallowing
+ * the failure — invaluable when chasing "subscriptions aren't available"
+ * symptoms across the RC + StoreKit + sandbox stack.
  */
 export async function fetchProOfferings(): Promise<{
   monthly: PurchasesPackage | null;
   annual: PurchasesPackage | null;
-} | null> {
-  if (!configured) return null;
+  error?: string;
+}> {
+  if (!configured) {
+    return { monthly: null, annual: null, error: 'RC SDK not configured (no API key)' };
+  }
   try {
     const offerings = await Purchases.getOfferings();
     const current = offerings.current;
-    if (!current) return null;
+    if (!current) {
+      const ids = Object.keys(offerings.all);
+      return {
+        monthly: null,
+        annual: null,
+        error: `No current offering set. RC sees these offerings: [${ids.join(', ') || '(none)'}]. Mark one as current in the RC dashboard.`,
+      };
+    }
+    if (!current.monthly && !current.annual) {
+      const pkgIds = current.availablePackages.map((p) => p.identifier).join(', ');
+      return {
+        monthly: null,
+        annual: null,
+        error: `Current offering "${current.identifier}" has no monthly/annual packages. Package ids RC returned: [${pkgIds || '(none)'}]. Must be $rc_monthly / $rc_annual to auto-map, or StoreKit failed to load products.`,
+      };
+    }
     return {
       monthly: current.monthly ?? null,
       annual: current.annual ?? null,
     };
   } catch (err) {
-    if (__DEV__) console.warn('[RevenueCat] fetchProOfferings failed', err);
-    return null;
+    return {
+      monthly: null,
+      annual: null,
+      error: err instanceof Error ? `${err.name}: ${err.message}` : String(err),
+    };
   }
 }
 

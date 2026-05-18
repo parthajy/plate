@@ -30,12 +30,14 @@ export default function PaywallScreen() {
   const [selected, setSelected] = useState<'monthly' | 'annual'>('annual');
   const [busy, setBusy] = useState<'purchase' | 'restore' | null>(null);
   const [unavailable, setUnavailable] = useState(false);
+  const [debugError, setDebugError] = useState<string | null>(null);
 
   useEffect(() => {
     void (async () => {
       const offerings = await fetchProOfferings();
-      if (!offerings || (!offerings.monthly && !offerings.annual)) {
+      if (!offerings.monthly && !offerings.annual) {
         setUnavailable(true);
+        if (offerings.error) setDebugError(offerings.error);
       } else {
         setMonthly(offerings.monthly);
         setAnnual(offerings.annual);
@@ -196,6 +198,23 @@ export default function PaywallScreen() {
             <Text style={[type.body, { color: colors.text2, textAlign: 'center' }]}>
               Subscriptions aren't available right now. We're setting them up — check back soon.
             </Text>
+            {debugError ? (
+              <Text
+                style={{
+                  ...type.bodySm,
+                  color: colors.text3,
+                  textAlign: 'left',
+                  marginTop: 14,
+                  fontFamily: 'Menlo',
+                  fontSize: 11,
+                  lineHeight: 15,
+                }}
+                selectable
+              >
+                {'DEBUG: '}
+                {debugError}
+              </Text>
+            ) : null}
           </View>
         ) : (
           <View style={{ marginTop: 32, gap: 12 }}>
