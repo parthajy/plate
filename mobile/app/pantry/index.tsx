@@ -380,14 +380,14 @@ export default function PantryRecipe() {
 
 // ----- Chips -----
 //
-// Pills are text-only. Earlier versions had emoji + text but they rendered
-// as column-stacked tiles in light mode because the cream-on-cream border
-// was invisible. Text-only + a darker (`text3`) border gives an obvious
-// pill in both themes.
+// Layout/bg/border live on an INNER View, not on Pressable's style function.
+// RN's Pressable doesn't reliably apply backgroundColor / borderRadius /
+// flexDirection when returned from `style={({pressed}) => ({...})}` —
+// children stack and the bg never paints. Wrapping in <View> fixes both.
 //
-// Two visual variants:
-//   filled  — solid accent bg, dark text (used for "in your pantry" — tap to remove)
-//   outline — page bg, accent border (used for empty-state Quick Add — tap to add)
+// Two visual variants for IngredientChip:
+//   filled  — solid accent bg, dark text   (used for items in your pantry — tap to remove)
+//   outline — page bg, accent-color border (used for empty-state Quick Add — tap to add)
 
 function IngredientChip({
   label,
@@ -400,89 +400,80 @@ function IngredientChip({
 }) {
   const filled = variant === 'filled';
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingVertical: 9,
-        paddingHorizontal: 16,
-        borderRadius: 999,
-        backgroundColor: filled ? colors.accent : 'transparent',
-        borderWidth: filled ? 0 : 1.5,
-        borderColor: colors.accent,
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      <Text
-        style={{
-          fontSize: 15,
-          color: filled ? colors.textInv : colors.text,
-          fontWeight: '600',
-          textTransform: 'capitalize',
-          letterSpacing: -0.1,
-        }}
-      >
-        {label}
-      </Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>
+      {({ pressed }) => (
+        <View
+          style={{
+            paddingVertical: 9,
+            paddingHorizontal: 16,
+            borderRadius: 999,
+            backgroundColor: filled ? colors.accent : 'transparent',
+            borderWidth: filled ? 0 : 1.5,
+            borderColor: colors.accent,
+            opacity: pressed ? 0.7 : 1,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              color: filled ? colors.textInv : colors.text,
+              fontWeight: '600',
+              textTransform: 'capitalize',
+            }}
+          >
+            {label}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
 
 function MutedChip({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingVertical: 9,
-        paddingHorizontal: 16,
-        borderRadius: 999,
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: colors.text3,
-        opacity: pressed ? 0.6 : 1,
-      })}
-    >
-      <Text
-        style={{
-          fontSize: 15,
-          color: colors.text3,
-          fontWeight: '500',
-        }}
-      >
-        {label}
-      </Text>
+    <Pressable onPress={onPress}>
+      {({ pressed }) => (
+        <View
+          style={{
+            paddingVertical: 9,
+            paddingHorizontal: 16,
+            borderRadius: 999,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderColor: colors.text3,
+            opacity: pressed ? 0.6 : 1,
+          }}
+        >
+          <Text style={{ fontSize: 15, color: colors.text3, fontWeight: '600' }}>{label}</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
 
 function AddChip({ onPress }: { onPress: () => void }) {
   return (
-    <Pressable
-      onPress={onPress}
-      accessibilityLabel="Add ingredient"
-      style={({ pressed }) => ({
-        flexDirection: 'row',
-        alignItems: 'center',
-        gap: 4,
-        paddingVertical: 9,
-        paddingHorizontal: 14,
-        borderRadius: 999,
-        backgroundColor: 'transparent',
-        borderWidth: 1.5,
-        borderColor: colors.text3,
-        borderStyle: 'dashed',
-        opacity: pressed ? 0.6 : 1,
-      })}
-    >
-      <Plus size={16} color={colors.text2} strokeWidth={2.4} />
-      <Text
-        style={{
-          fontSize: 15,
-          color: colors.text2,
-          fontWeight: '500',
-        }}
-      >
-        Add
-      </Text>
+    <Pressable onPress={onPress} accessibilityLabel="Add ingredient">
+      {({ pressed }) => (
+        <View
+          style={{
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 6,
+            paddingVertical: 9,
+            paddingHorizontal: 14,
+            borderRadius: 999,
+            backgroundColor: 'transparent',
+            borderWidth: 1.5,
+            borderColor: colors.text3,
+            borderStyle: 'dashed',
+            opacity: pressed ? 0.6 : 1,
+          }}
+        >
+          <Plus size={16} color={colors.text2} strokeWidth={2.6} />
+          <Text style={{ fontSize: 15, color: colors.text2, fontWeight: '600' }}>Add</Text>
+        </View>
+      )}
     </Pressable>
   );
 }
@@ -497,27 +488,30 @@ function FilterChip({
   onPress: () => void;
 }) {
   return (
-    <Pressable
-      onPress={onPress}
-      style={({ pressed }) => ({
-        paddingVertical: 9,
-        paddingHorizontal: 16,
-        borderRadius: 999,
-        backgroundColor: selected ? colors.accent : 'transparent',
-        borderWidth: 1.5,
-        borderColor: selected ? colors.accent : colors.text3,
-        opacity: pressed ? 0.7 : 1,
-      })}
-    >
-      <Text
-        style={{
-          fontSize: 15,
-          color: selected ? colors.textInv : colors.text,
-          fontWeight: '600',
-        }}
-      >
-        {label}
-      </Text>
+    <Pressable onPress={onPress} accessibilityRole="button" accessibilityState={{ selected }}>
+      {({ pressed }) => (
+        <View
+          style={{
+            paddingVertical: 9,
+            paddingHorizontal: 16,
+            borderRadius: 999,
+            backgroundColor: selected ? colors.accent : 'transparent',
+            borderWidth: 1.5,
+            borderColor: selected ? colors.accent : colors.text3,
+            opacity: pressed ? 0.7 : 1,
+          }}
+        >
+          <Text
+            style={{
+              fontSize: 15,
+              color: selected ? colors.textInv : colors.text,
+              fontWeight: '600',
+            }}
+          >
+            {label}
+          </Text>
+        </View>
+      )}
     </Pressable>
   );
 }
