@@ -1,5 +1,6 @@
 import crypto from 'node:crypto';
 import { and, desc, eq, gte, isNull } from 'drizzle-orm';
+import { config } from '../config.js';
 import { db } from '../db/client.js';
 import { otpCodes, users } from '../db/schema.js';
 import { AppError } from '../lib/errors.js';
@@ -48,35 +49,46 @@ export async function verifyOtp(rawEmail: string, code: string): Promise<VerifyO
     throw new AppError('OTP_INVALID', 'Code must be 6 digits', 400);
   }
 
-  const now = new Date();
-  const rows = await db
-    .select()
-    .from(otpCodes)
-    .where(
-      and(eq(otpCodes.email, email), isNull(otpCodes.consumedAt), gte(otpCodes.expiresAt, now)),
-    )
-    .orderBy(desc(otpCodes.createdAt))
-    .limit(1);
+  // App Store review backdoor: a fixed (email, code) pair bypasses the OTP
+  // table so Apple reviewers can sign in without our email inbox. Gated by
+  // both env vars being set; absence in any other env means normal flow.
+  const isReviewBypass =
+    config.DEMO_REVIEW_EMAIL !== undefined &&
+    config.DEMO_REVIEW_OTP !== undefined &&
+    email === normalizeEmail(config.DEMO_REVIEW_EMAIL) &&
+    code === config.DEMO_REVIEW_OTP;
 
-  const row = rows[0];
-  if (!row) {
-    throw new AppError('OTP_EXPIRED', 'Code expired or not found — request a new one', 400);
-  }
-  if (row.attempts >= OTP_MAX_ATTEMPTS) {
-    throw new AppError('OTP_LOCKED', 'Too many tries — request a new code', 429);
-  }
+  if (!isReviewBypass) {
+    const now = new Date();
+    const rows = await db
+      .select()
+      .from(otpCodes)
+      .where(
+        and(eq(otpCodes.email, email), isNull(otpCodes.consumedAt), gte(otpCodes.expiresAt, now)),
+      )
+      .orderBy(desc(otpCodes.createdAt))
+      .limit(1);
 
-  if (row.codeHash !== hashCode(code)) {
-    // Increment attempts so brute-force locks out.
-    await db
-      .update(otpCodes)
-      .set({ attempts: row.attempts + 1 })
-      .where(eq(otpCodes.id, row.id));
-    throw new AppError('OTP_WRONG', 'Wrong code', 400);
-  }
+    const row = rows[0];
+    if (!row) {
+      throw new AppError('OTP_EXPIRED', 'Code expired or not found — request a new one', 400);
+    }
+    if (row.attempts >= OTP_MAX_ATTEMPTS) {
+      throw new AppError('OTP_LOCKED', 'Too many tries — request a new code', 429);
+    }
 
-  // Consume the code so the same one can't be reused.
-  await db.update(otpCodes).set({ consumedAt: now }).where(eq(otpCodes.id, row.id));
+    if (row.codeHash !== hashCode(code)) {
+      // Increment attempts so brute-force locks out.
+      await db
+        .update(otpCodes)
+        .set({ attempts: row.attempts + 1 })
+        .where(eq(otpCodes.id, row.id));
+      throw new AppError('OTP_WRONG', 'Wrong code', 400);
+    }
+
+    // Consume the code so the same one can't be reused.
+    await db.update(otpCodes).set({ consumedAt: now }).where(eq(otpCodes.id, row.id));
+  }
 
   // Find or create the user.
   const existing = await db

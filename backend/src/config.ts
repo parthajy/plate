@@ -34,6 +34,16 @@ const ConfigSchema = z.object({
   REVENUECAT_WEBHOOK_SECRET: z.string().optional(),
 
   SENTRY_DSN: z.string().url().optional(),
+
+  // App Store Review backdoor: lets reviewers sign in to the demo account
+  // without us having access to their inbox. If both are set, the matching
+  // (email, code) pair bypasses the OTP table lookup. Should be unset in
+  // every environment except production-during-review.
+  DEMO_REVIEW_EMAIL: z.string().email().optional(),
+  DEMO_REVIEW_OTP: z
+    .string()
+    .regex(/^\d{6}$/, 'DEMO_REVIEW_OTP must be 6 digits')
+    .optional(),
 });
 
 export type Config = z.infer<typeof ConfigSchema>;
