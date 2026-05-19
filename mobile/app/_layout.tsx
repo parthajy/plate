@@ -11,6 +11,7 @@ import { applyTheme, colors } from '../lib/theme';
 import { identifyToRevenueCat, initRevenueCat, resetRevenueCatIdentity } from '../lib/revenuecat';
 import { useAuth } from '../stores/auth';
 import { useSettings } from '../stores/settings';
+import { UpgradeModal } from '../components/UpgradeModal';
 
 // Sentry: capture native + JS crashes in production builds. Skipped in dev
 // (Metro spam) and skipped entirely when no DSN is set (env-var gate).
@@ -101,6 +102,7 @@ function RootLayout() {
                 <Stack.Screen name="(tabs)" />
               </Stack>
             )}
+            <UpgradeModal />
           </View>
         </QueryClientProvider>
       </SafeAreaProvider>

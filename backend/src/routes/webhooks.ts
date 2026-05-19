@@ -12,7 +12,9 @@ import { AppError, UnauthorizedError } from '../lib/errors.js';
 const RCEventSchema = z.object({
   event: z.object({
     type: z.string(),
-    app_user_id: z.string(),
+    // RC sends TEST / TRANSFER events from the dashboard without an
+    // app_user_id. Accept missing and skip in the handler.
+    app_user_id: z.string().optional(),
     product_id: z.string().optional(),
     store: z.string().optional(), // 'APP_STORE' | 'PLAY_STORE' | 'STRIPE' | …
     expiration_at_ms: z.number().nullable().optional(),
@@ -75,10 +77,10 @@ export async function webhookRoutes(fastify: FastifyInstance): Promise<void> {
     }
 
     // app_user_id is the UUID we passed to Purchases.logIn() on mobile.
-    // If we ever see a non-UUID here it means we never identified the user
-    // (purchase was anonymous) — log and skip rather than crash.
+    // If we ever see a non-UUID (or missing) here it means we never identified
+    // the user (purchase was anonymous, or RC sent a test event) — log + skip.
     const userId = event.app_user_id;
-    if (!/^[0-9a-f-]{36}$/i.test(userId)) {
+    if (!userId || !/^[0-9a-f-]{36}$/i.test(userId)) {
       req.log.warn(
         { appUserId: userId, rcEvent: event.type },
         'rc webhook: non-uuid app_user_id, skipping',

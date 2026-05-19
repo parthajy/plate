@@ -23,6 +23,8 @@ import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
 import { RecipeCard } from '../../components/recipe/RecipeCard';
 import { RecipeProcessingOverlay } from '../../components/recipe/RecipeProcessingOverlay';
+import { useAuth } from '../../stores/auth';
+import { useUpgradeModal } from '../../stores/upgradeModal';
 import { colors, radius, type } from '../../lib/theme';
 
 // Common ingredients shown when the user's pantry is empty, so they can
@@ -119,11 +121,23 @@ export default function PantryRecipe() {
     },
   });
 
+  const isPremium = useAuth((s) => s.user?.isPremium ?? false);
   const generate = useMutation({
     mutationFn: (f: RecipeFilters) =>
       api.post<SavedRecipeResponse>('/v1/pantry/recipe', { filters: f }),
     onSuccess: (resp) => {
       queryClient.setQueryData(['pantry', 'recipe', 'last'], resp);
+      // Soft upgrade nudge for free users — fires once per day max (dedup'd
+      // in the store via AsyncStorage), only after they actually see a
+      // successful recipe. Premium users never see it.
+      if (!isPremium) void useUpgradeModal.getState().softShow('first-recipe-of-day');
+    },
+    onError: (err) => {
+      // If the failure is a budget/cap error, fire the modal hard (no day
+      // dedup) — they just hit the wall and the upsell is the answer.
+      if (err instanceof ApiError && err.code === 'BUDGET_EXCEEDED') {
+        useUpgradeModal.getState().show('recipe-cap');
+      }
     },
   });
 
@@ -385,7 +399,7 @@ export default function PantryRecipe() {
             </Text>
             {generate.error instanceof ApiError && generate.error.code === 'BUDGET_EXCEEDED' ? (
               <Pressable
-                onPress={() => router.push('/paywall')}
+                onPress={() => useUpgradeModal.getState().show('recipe-cap')}
                 style={({ pressed }) => ({ opacity: pressed ? 0.7 : 1, marginTop: 10 })}
               >
                 <View

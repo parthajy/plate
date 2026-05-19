@@ -16,6 +16,7 @@ import type { StatsResponse, Units } from '@plate/shared';
 import { api } from '../../lib/api';
 import { useAuth } from '../../stores/auth';
 import { useSettings, type ThemeMode } from '../../stores/settings';
+import { useUpgradeModal } from '../../stores/upgradeModal';
 import { colors, radius, type } from '../../lib/theme';
 
 const GOAL_LABEL: Record<string, string> = {
@@ -306,7 +307,9 @@ export default function YouTab() {
         <SettingRow
           title={user?.isPremium ? 'Plate Pro' : 'Upgrade to Pro'}
           value={subscriptionValue}
-          onPress={() => router.push('/paywall')}
+          onPress={() => {
+            if (!user?.isPremium) useUpgradeModal.getState().show('manual');
+          }}
           isLast
         />
 

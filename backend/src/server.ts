@@ -45,12 +45,19 @@ async function build() {
   await fastify.register(sensible);
 
   fastify.setErrorHandler((err, req, reply) => {
-    if (err instanceof ZodError) {
+    // instanceof can lie if two copies of zod end up in the bundle (workspace
+    // resolution quirks). Fall back to the structural check so validation
+    // errors never leak to Sentry.
+    const isZodError =
+      err instanceof ZodError ||
+      (err instanceof Error && err.name === 'ZodError' && Array.isArray((err as ZodError).issues));
+    if (isZodError) {
+      const zerr = err as ZodError;
       void reply.code(400).send({
         error: {
           code: 'VALIDATION',
           message: 'Invalid request',
-          issues: err.issues.map((i) => ({
+          issues: zerr.issues.map((i) => ({
             path: i.path.join('.'),
             message: i.message,
           })),
