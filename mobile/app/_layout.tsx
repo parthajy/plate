@@ -6,10 +6,25 @@ import { ActivityIndicator, useColorScheme, View } from 'react-native';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import * as Sentry from '@sentry/react-native';
 import { applyTheme, colors } from '../lib/theme';
 import { identifyToRevenueCat, initRevenueCat, resetRevenueCatIdentity } from '../lib/revenuecat';
 import { useAuth } from '../stores/auth';
 import { useSettings } from '../stores/settings';
+
+// Sentry: capture native + JS crashes in production builds. Skipped in dev
+// (Metro spam) and skipped entirely when no DSN is set (env-var gate).
+const sentryDsn = process.env.EXPO_PUBLIC_SENTRY_DSN;
+if (sentryDsn && !__DEV__) {
+  Sentry.init({
+    dsn: sentryDsn,
+    tracesSampleRate: 0.1,
+    sendDefaultPii: false,
+    // Drop the wall of breadcrumbs from React Navigation transitions —
+    // they explode quota without adding much diagnostic value.
+    enableAutoSessionTracking: true,
+  });
+}
 
 initRevenueCat();
 
@@ -23,7 +38,7 @@ const queryClient = new QueryClient({
   },
 });
 
-export default function RootLayout() {
+function RootLayout() {
   const status = useAuth((s) => s.status);
   const hydrate = useAuth((s) => s.hydrate);
   const hydrateSettings = useSettings((s) => s.hydrate);
@@ -92,3 +107,5 @@ export default function RootLayout() {
     </GestureHandlerRootView>
   );
 }
+
+export default Sentry.wrap(RootLayout);

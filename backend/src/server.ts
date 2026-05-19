@@ -1,9 +1,23 @@
+import * as Sentry from '@sentry/node';
 import Fastify from 'fastify';
 import sensible from '@fastify/sensible';
 import cors from '@fastify/cors';
 import helmet from '@fastify/helmet';
 import { ZodError } from 'zod';
 import { config, isProd } from './config.js';
+
+// Sentry must be initialized as early as possible so it catches errors from
+// imports / module evaluation. Skipped entirely if SENTRY_DSN isn't set —
+// fine for dev and useful as an escape hatch.
+if (config.SENTRY_DSN) {
+  Sentry.init({
+    dsn: config.SENTRY_DSN,
+    environment: config.NODE_ENV,
+    tracesSampleRate: isProd ? 0.1 : 0,
+    // Don't sample logs as breadcrumbs in prod — too noisy.
+    sendDefaultPii: false,
+  });
+}
 import { loggerOptions } from './lib/logger.js';
 import { AppError } from './lib/errors.js';
 import { healthRoutes } from './routes/health.js';
@@ -51,6 +65,14 @@ async function build() {
       return;
     }
     req.log.error({ err }, 'unhandled error');
+    // Send to Sentry with request context so we can see what endpoint failed
+    // for which user. AppError / ZodError are handled above and aren't sent
+    // (they're user errors, not server bugs).
+    Sentry.withScope((scope) => {
+      scope.setTag('route', `${req.method} ${req.routeOptions?.url ?? req.url}`);
+      if (req.user) scope.setUser({ id: req.user.id });
+      Sentry.captureException(err);
+    });
     const message = err instanceof Error ? err.message : String(err);
     void reply.code(500).send({
       error: { code: 'INTERNAL', message: isProd ? 'Internal server error' : message },
