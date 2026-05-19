@@ -8,6 +8,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "backgroundColor": "#0b0b0a",
+    "icon": "./assets/icon.png",
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "best.plate.app",
@@ -34,6 +35,15 @@
         "expo-camera",
         {
           "cameraPermission": "Plate uses your camera to scan food and estimate calories and macros."
+        }
+      ],
+      [
+        "expo-splash-screen",
+        {
+          "image": "./assets/splash-icon.png",
+          "imageWidth": 180,
+          "resizeMode": "contain",
+          "backgroundColor": "#0b0b0a"
         }
       ],
       "expo-web-browser",
