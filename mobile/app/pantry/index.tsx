@@ -12,19 +12,16 @@ import {
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { ChevronLeft, Plus, X as XIcon } from 'lucide-react-native';
+import { ChevronLeft, Clock, Plus, X as XIcon } from 'lucide-react-native';
 import type {
-  MealType,
   PantryItem,
   PantryListResponse,
-  Recipe,
   RecipeFilters,
-  RecipeResponse,
+  SavedRecipeResponse,
 } from '@plate/shared';
 import { Button } from '../../components/ui/Button';
 import { api, ApiError } from '../../lib/api';
-import { useLogFood } from '../../hooks/useDailyLogs';
-import { toIsoDate } from '../../lib/formatters';
+import { RecipeCard } from '../../components/recipe/RecipeCard';
 import { RecipeProcessingOverlay } from '../../components/recipe/RecipeProcessingOverlay';
 import { colors, radius, type } from '../../lib/theme';
 
@@ -123,7 +120,8 @@ export default function PantryRecipe() {
   });
 
   const generate = useMutation({
-    mutationFn: (f: RecipeFilters) => api.post<RecipeResponse>('/v1/pantry/recipe', { filters: f }),
+    mutationFn: (f: RecipeFilters) =>
+      api.post<SavedRecipeResponse>('/v1/pantry/recipe', { filters: f }),
     onSuccess: (resp) => {
       queryClient.setQueryData(['pantry', 'recipe', 'last'], resp);
     },
@@ -131,7 +129,7 @@ export default function PantryRecipe() {
 
   // Pull the most recently generated recipe out of the cache so it stays
   // visible after navigation back. Cleared when the user explicitly regenerates.
-  const recipeResp = queryClient.getQueryData<RecipeResponse>(['pantry', 'recipe', 'last']);
+  const recipeResp = queryClient.getQueryData<SavedRecipeResponse>(['pantry', 'recipe', 'last']);
   const recipe = recipeResp?.recipe;
 
   const onAdd = useCallback(
@@ -163,7 +161,7 @@ export default function PantryRecipe() {
       style={{ flex: 1, backgroundColor: colors.bg }}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
-      {/* Top bar with back arrow */}
+      {/* Top bar: back arrow on the left, History link on the right. */}
       <View
         style={{
           paddingTop: insets.top + 6,
@@ -180,6 +178,21 @@ export default function PantryRecipe() {
           style={{ paddingRight: 6 }}
         >
           <ChevronLeft color={colors.text2} size={26} />
+        </Pressable>
+        <View style={{ flex: 1 }} />
+        <Pressable
+          onPress={() => router.push('/recipes')}
+          hitSlop={8}
+          accessibilityLabel="See past recipes"
+          style={({ pressed }) => ({
+            flexDirection: 'row',
+            alignItems: 'center',
+            gap: 4,
+            opacity: pressed ? 0.6 : 1,
+          })}
+        >
+          <Clock size={14} color={colors.accent} strokeWidth={2.4} />
+          <Text style={{ ...type.label, color: colors.accent, fontWeight: '600' }}>History</Text>
         </Pressable>
       </View>
 
@@ -599,223 +612,5 @@ function FilterChip({
         </Text>
       </View>
     </Pressable>
-  );
-}
-
-// ----- Recipe card (inline) -----
-
-const MEALS: { value: MealType; label: string }[] = [
-  { value: 'breakfast', label: 'Breakfast' },
-  { value: 'lunch', label: 'Lunch' },
-  { value: 'dinner', label: 'Dinner' },
-  { value: 'snack', label: 'Snack' },
-];
-
-function pickDefaultMeal(): MealType {
-  const h = new Date().getHours();
-  if (h < 10) return 'breakfast';
-  if (h < 14) return 'lunch';
-  if (h < 18) return 'snack';
-  return 'dinner';
-}
-
-function RecipeCard({ recipe }: { recipe: Recipe }) {
-  const isoDate = toIsoDate(new Date());
-  const logFood = useLogFood(isoDate);
-  const [meal, setMeal] = useState<MealType>(pickDefaultMeal());
-  const [logged, setLogged] = useState(false);
-
-  const servingGrams = useMemo(() => {
-    const total = recipe.ingredients.reduce((acc, i) => acc + i.grams, 0);
-    return Math.round(total / Math.max(1, recipe.servings));
-  }, [recipe]);
-
-  const m = recipe.macrosPerServing;
-  const metaLine = `${recipe.totalMinutes} MIN · ${Math.round(m.proteinG)}g·P · ${Math.round(m.kcal)} KCAL`;
-
-  const onLog = async () => {
-    try {
-      await logFood.mutateAsync({
-        name: recipe.title,
-        grams: servingGrams || 200,
-        kcal: Math.round(m.kcal),
-        proteinG: Math.round(m.proteinG * 10) / 10,
-        carbsG: Math.round(m.carbsG * 10) / 10,
-        fatG: Math.round(m.fatG * 10) / 10,
-        mealType: meal,
-        loggedAt: new Date().toISOString(),
-        source: 'recipe',
-      });
-      setLogged(true);
-    } catch (e) {
-      Alert.alert('Could not log', e instanceof ApiError ? e.message : 'Try again.');
-    }
-  };
-
-  return (
-    <View
-      style={{
-        marginTop: 26,
-        padding: 20,
-        borderRadius: radius.xl,
-        backgroundColor: colors.surface,
-        borderWidth: 1,
-        borderColor: colors.border,
-      }}
-    >
-      {/* Title row with AI badge */}
-      <View style={{ flexDirection: 'row', alignItems: 'flex-start', gap: 12 }}>
-        <Text
-          style={{
-            ...type.display2,
-            color: colors.text,
-            fontStyle: 'italic',
-            flex: 1,
-            fontSize: 28,
-            lineHeight: 32,
-          }}
-        >
-          {recipe.title}
-        </Text>
-        <View
-          style={{
-            paddingHorizontal: 8,
-            paddingVertical: 3,
-            borderRadius: 6,
-            borderWidth: 1.5,
-            borderColor: colors.accent,
-            marginTop: 4,
-          }}
-        >
-          <Text
-            style={{
-              ...type.monoSm,
-              color: colors.accent,
-              letterSpacing: 1.5,
-              fontWeight: '700',
-            }}
-          >
-            AI
-          </Text>
-        </View>
-      </View>
-
-      {/* Meta line */}
-      <Text
-        style={{
-          ...type.monoSm,
-          color: colors.text2,
-          letterSpacing: 1.3,
-          marginTop: 8,
-        }}
-      >
-        {metaLine}
-      </Text>
-
-      {recipe.description ? (
-        <Text style={[type.bodySm, { color: colors.text3, marginTop: 10, lineHeight: 20 }]}>
-          {recipe.description}
-        </Text>
-      ) : null}
-
-      {/* Numbered steps */}
-      <View style={{ marginTop: 18, gap: 14 }}>
-        {recipe.steps.map((s, i) => (
-          <View key={i} style={{ flexDirection: 'row', gap: 14 }}>
-            <Text
-              style={{
-                ...type.monoSm,
-                color: colors.accent,
-                letterSpacing: 0.8,
-                width: 22,
-                marginTop: 4,
-              }}
-            >
-              {String(i + 1).padStart(2, '0')}
-            </Text>
-            <Text style={[type.body, { color: colors.text, flex: 1, lineHeight: 22 }]}>{s}</Text>
-          </View>
-        ))}
-      </View>
-
-      {/* Missing ingredients */}
-      {recipe.missing.length > 0 ? (
-        <View
-          style={{
-            marginTop: 18,
-            padding: 12,
-            borderRadius: radius.md,
-            backgroundColor: colors.surface2,
-            borderWidth: 1,
-            borderColor: colors.borderHi,
-          }}
-        >
-          <Text
-            style={{
-              ...type.monoSm,
-              color: colors.text2,
-              letterSpacing: 1.2,
-              textTransform: 'uppercase',
-            }}
-          >
-            Also need
-          </Text>
-          <Text style={[type.bodySm, { color: colors.text, marginTop: 6 }]}>
-            {recipe.missing.join(' · ')}
-          </Text>
-        </View>
-      ) : null}
-
-      {/* Log as meal */}
-      <Text
-        style={{
-          ...type.monoSm,
-          color: colors.text2,
-          letterSpacing: 1.4,
-          textTransform: 'uppercase',
-          marginTop: 22,
-          marginBottom: 10,
-        }}
-      >
-        Log as
-      </Text>
-      <View style={{ flexDirection: 'row', flexWrap: 'wrap', gap: 8 }}>
-        {MEALS.map((opt) => (
-          <Pressable
-            key={opt.value}
-            onPress={() => setMeal(opt.value)}
-            style={({ pressed }) => ({
-              paddingVertical: 8,
-              paddingHorizontal: 14,
-              borderRadius: radius.full,
-              backgroundColor: meal === opt.value ? colors.accent : 'transparent',
-              borderWidth: 1.5,
-              borderColor: meal === opt.value ? colors.accent : colors.borderHi,
-              opacity: pressed ? 0.7 : 1,
-            })}
-          >
-            <Text
-              style={{
-                ...type.bodySm,
-                color: meal === opt.value ? colors.textInv : colors.text2,
-                fontWeight: '600',
-              }}
-            >
-              {opt.label}
-            </Text>
-          </Pressable>
-        ))}
-      </View>
-
-      <View style={{ marginTop: 18 }}>
-        <Button
-          label={logged ? 'Logged ✓' : 'Log a serving'}
-          size="lg"
-          onPress={() => void onLog()}
-          loading={logFood.isPending}
-          disabled={logged}
-        />
-      </View>
-    </View>
   );
 }

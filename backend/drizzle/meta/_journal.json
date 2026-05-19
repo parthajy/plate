@@ -36,6 +36,13 @@
       "when": 1779082398945,
       "tag": "0004_nasty_talisman",
       "breakpoints": true
+    },
+    {
+      "idx": 5,
+      "version": "7",
+      "when": 1779151475201,
+      "tag": "0005_smooth_jackpot",
+      "breakpoints": true
     }
   ]
 }

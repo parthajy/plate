@@ -153,6 +153,35 @@ export const pantryItems = pgTable(
   }),
 );
 
+// Every generated recipe is persisted so users can revisit them. Recipe
+// fields are JSONB rather than relational because the shape is large,
+// AI-emitted, and never queried by structure — we always read the full
+// row by id. Keeps the schema small and avoids 3 child tables.
+export const recipes = pgTable(
+  'recipes',
+  {
+    id: uuid('id')
+      .primaryKey()
+      .default(sql`gen_random_uuid()`),
+    userId: uuid('user_id')
+      .notNull()
+      .references(() => users.id, { onDelete: 'cascade' }),
+    title: text('title').notNull(),
+    description: text('description'),
+    servings: integer('servings').notNull(),
+    totalMinutes: integer('total_minutes').notNull(),
+    ingredients: jsonb('ingredients').notNull(),
+    steps: jsonb('steps').notNull(),
+    macrosPerServing: jsonb('macros_per_serving').notNull(),
+    pantryUsed: jsonb('pantry_used').notNull(),
+    missing: jsonb('missing').notNull(),
+    createdAt: timestamp('created_at', { withTimezone: true }).notNull().defaultNow(),
+  },
+  (t) => ({
+    userCreatedIdx: index('idx_recipes_user_created').on(t.userId, t.createdAt),
+  }),
+);
+
 export const coachMessages = pgTable(
   'coach_messages',
   {

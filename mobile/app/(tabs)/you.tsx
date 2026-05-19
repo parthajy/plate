@@ -293,6 +293,11 @@ export default function YouTab() {
           title="Body & activities"
           value={bodyValue}
           onPress={() => router.push('/you/profile')}
+        />
+        <SettingRow
+          title="Your recipes"
+          value="History"
+          onPress={() => router.push('/recipes')}
           isLast
         />
 

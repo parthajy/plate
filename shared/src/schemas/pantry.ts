@@ -59,3 +59,20 @@ export const RecipeResponseSchema = z.object({
   recipe: Recipe,
 });
 export type RecipeResponse = z.infer<typeof RecipeResponseSchema>;
+
+// Persisted recipe — server stamps id + createdAt on top of the AI's output.
+export const SavedRecipe = Recipe.extend({
+  id: z.string().uuid(),
+  createdAt: z.string().datetime(),
+});
+export type SavedRecipe = z.infer<typeof SavedRecipe>;
+
+export const SavedRecipeListResponse = z.object({
+  recipes: z.array(SavedRecipe),
+});
+export type SavedRecipeListResponse = z.infer<typeof SavedRecipeListResponse>;
+
+export const SavedRecipeResponse = z.object({
+  recipe: SavedRecipe,
+});
+export type SavedRecipeResponse = z.infer<typeof SavedRecipeResponse>;
