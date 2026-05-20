@@ -14,7 +14,9 @@ export type Units = z.infer<typeof Units>;
 
 export const OnboardingSchema = z.object({
   sex: Sex,
-  birthdate: z.string().date(),
+  // Optional: App Store guideline 5.1.1(v) — age isn't strictly required to
+  // run the app. When absent, the BMR calc falls back to a default age.
+  birthdate: z.string().date().optional(),
   heightCm: z.number().int().min(80).max(260),
   weightKg: z.number().min(25).max(400),
   activities: z.array(Activity).min(1).max(6),

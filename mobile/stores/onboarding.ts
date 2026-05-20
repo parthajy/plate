@@ -3,7 +3,7 @@ import type { Activity, Goal, Sex, Units } from '@plate/shared';
 
 export interface OnboardingDraft {
   sex?: Sex;
-  birthdate?: string; // YYYY-MM-DD
+  birthdate?: string | undefined; // YYYY-MM-DD, optional
   heightCm?: number;
   weightKg?: number;
   activities: Activity[];

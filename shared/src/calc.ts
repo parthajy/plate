@@ -48,9 +48,14 @@ export function ageYears(birthdate: string, today: Date = new Date()): number {
 
 const KCAL_PER_KG_BODYWEIGHT = 7700;
 
+// Used when the user skips date of birth (it's optional — see guideline
+// 5.1.1(v)). Age's weight in Mifflin-St Jeor is small (−5 kcal/year), so a
+// 30-year-old midpoint keeps the estimate within ~100 kcal for most adults.
+const DEFAULT_AGE_YEARS = 30;
+
 export interface TargetsInput {
   sex: Sex;
-  birthdate: string;
+  birthdate?: string | undefined;
   heightCm: number;
   weightKg: number;
   activities: readonly Activity[];
@@ -67,7 +72,7 @@ export interface Targets {
 }
 
 export function calculateTargets(input: TargetsInput): Targets {
-  const age = ageYears(input.birthdate);
+  const age = input.birthdate ? ageYears(input.birthdate) : DEFAULT_AGE_YEARS;
   const restingBmr = bmr({
     sex: input.sex,
     weightKg: input.weightKg,

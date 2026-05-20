@@ -62,7 +62,8 @@ export default function SexScreen() {
           ? 'light'
           : 'dark';
 
-  const valid = !!sex && !!dob;
+  // Only sex is required — date of birth is optional (guideline 5.1.1(v)).
+  const valid = !!sex;
 
   return (
     <OnboardingShell
@@ -77,8 +78,8 @@ export default function SexScreen() {
       subtitle="We use this to calculate your resting metabolic rate."
       primaryDisabled={!valid}
       onPrimary={() => {
-        if (!sex || !dob) return;
-        draft.set({ sex, birthdate: toIsoDate(dob) });
+        if (!sex) return;
+        draft.set({ sex, birthdate: dob ? toIsoDate(dob) : undefined });
         router.push('/(onboarding)/measurements');
       }}
     >
@@ -121,7 +122,7 @@ export default function SexScreen() {
             marginBottom: 8,
           }}
         >
-          Date of birth
+          Date of birth <Text style={{ color: colors.text3 }}>(optional)</Text>
         </Text>
 
         <Pressable
@@ -155,7 +156,7 @@ export default function SexScreen() {
             marginTop: 8,
           }}
         >
-          Used only for age in the BMR calculation.
+          Sharpens the BMR estimate. Skip it and we&apos;ll assume an average age.
         </Text>
 
         {pickerOpen && Platform.OS === 'ios' ? (

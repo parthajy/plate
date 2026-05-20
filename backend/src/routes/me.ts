@@ -136,11 +136,12 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
       body.goal !== undefined ||
       body.goalRateKgPerWeek !== undefined;
 
+    // birthdate is intentionally NOT required here — it's optional, and
+    // calculateTargets falls back to a default age when it's absent.
     const canRecompute =
       bodyCompTouched &&
       !body.keepTargets &&
       sex &&
-      birthdate &&
       heightCm != null &&
       weightKg != null &&
       activities &&
@@ -151,7 +152,7 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
     const targets = canRecompute
       ? calculateTargets({
           sex: sex!,
-          birthdate: birthdate!,
+          birthdate: birthdate ?? undefined,
           heightCm: heightCm!,
           weightKg: weightKg!,
           activities: activities!,
@@ -344,7 +345,7 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
       .values({
         userId: req.user.id,
         sex: body.sex,
-        birthdate: body.birthdate,
+        birthdate: body.birthdate ?? null,
         heightCm: body.heightCm,
         weightKg: body.weightKg.toFixed(2),
         activities: body.activities,
@@ -362,7 +363,7 @@ export async function meRoutes(fastify: FastifyInstance): Promise<void> {
         target: profiles.userId,
         set: {
           sex: body.sex,
-          birthdate: body.birthdate,
+          birthdate: body.birthdate ?? null,
           heightCm: body.heightCm,
           weightKg: body.weightKg.toFixed(2),
           activities: body.activities,

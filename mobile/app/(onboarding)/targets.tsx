@@ -59,9 +59,9 @@ export default function TargetsScreen() {
   const [err, setErr] = useState<string | null>(null);
 
   const targets = useMemo(() => {
+    // birthdate is optional — calculateTargets defaults the age when absent.
     if (
       !draft.sex ||
-      !draft.birthdate ||
       !draft.heightCm ||
       !draft.weightKg ||
       !draft.goal ||
@@ -97,7 +97,6 @@ export default function TargetsScreen() {
   const submit = async () => {
     if (
       !draft.sex ||
-      !draft.birthdate ||
       !draft.heightCm ||
       !draft.weightKg ||
       !draft.goal ||
