@@ -29,6 +29,15 @@ export function initRevenueCat(): void {
     return;
   }
 
+  // RevenueCat's native SDK force-quits a *release* build the moment it's
+  // configured with a `test_` key (it does this from native code, so a JS
+  // try/catch can't stop it). Treat a test key in a production build as
+  // "no key" — skip init so the app runs; the paywall just shows
+  // unavailable until a real platform key is wired up.
+  if (!__DEV__ && apiKey.startsWith('test_')) {
+    return;
+  }
+
   try {
     Purchases.setLogLevel(__DEV__ ? LOG_LEVEL.VERBOSE : LOG_LEVEL.WARN);
     Purchases.configure({ apiKey });
