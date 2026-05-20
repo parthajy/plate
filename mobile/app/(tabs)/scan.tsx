@@ -1,5 +1,14 @@
 import { useCallback, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Image, Pressable, ScrollView, Text, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Alert,
+  Image,
+  Linking,
+  Pressable,
+  ScrollView,
+  Text,
+  View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { CameraView, useCameraPermissions } from 'expo-camera';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -115,10 +124,16 @@ export default function ScanTab() {
           Point. <Text style={{ color: colors.accent, fontStyle: 'italic' }}>Done</Text>.
         </Text>
         <Text style={[type.bodyLg, { color: colors.text2, marginTop: 12, maxWidth: 320 }]}>
-          Plate uses your camera to estimate what you&apos;re eating in three seconds.
+          {permission.canAskAgain
+            ? "Plate uses your camera to estimate what you're eating in three seconds."
+            : 'Camera access is turned off. Enable it in Settings to scan food.'}
         </Text>
         <View style={{ marginTop: 28 }}>
-          <Button label="Allow camera" size="lg" onPress={() => void requestPermission()} />
+          {permission.canAskAgain ? (
+            <Button label="Continue" size="lg" onPress={() => void requestPermission()} />
+          ) : (
+            <Button label="Open Settings" size="lg" onPress={() => void Linking.openSettings()} />
+          )}
         </View>
       </View>
     );
