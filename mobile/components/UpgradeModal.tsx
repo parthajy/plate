@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { ActivityIndicator, Alert, Modal, Pressable, ScrollView, Text, View } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Check, X as XIcon } from 'lucide-react-native';
 import type { PurchasesPackage } from 'react-native-purchases';
@@ -362,6 +363,51 @@ export function UpgradeModal() {
             >
               Auto-renews. Cancel anytime in App Store settings.
             </Text>
+            {/* Apple guideline 3.1.2 requires Terms + Privacy links in the
+                subscription purchase flow itself, not just store metadata. */}
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'center',
+                alignItems: 'center',
+                gap: 8,
+                marginTop: 6,
+              }}
+            >
+              <Pressable
+                onPress={() => void WebBrowser.openBrowserAsync('https://plate.best/terms')}
+                hitSlop={8}
+                accessibilityLabel="Terms of Use"
+              >
+                <Text
+                  style={{
+                    ...type.bodySm,
+                    color: colors.text3,
+                    fontSize: 11,
+                    textDecorationLine: 'underline',
+                  }}
+                >
+                  Terms of Use
+                </Text>
+              </Pressable>
+              <Text style={{ ...type.bodySm, color: colors.text3, fontSize: 11 }}>·</Text>
+              <Pressable
+                onPress={() => void WebBrowser.openBrowserAsync('https://plate.best/privacy')}
+                hitSlop={8}
+                accessibilityLabel="Privacy Policy"
+              >
+                <Text
+                  style={{
+                    ...type.bodySm,
+                    color: colors.text3,
+                    fontSize: 11,
+                    textDecorationLine: 'underline',
+                  }}
+                >
+                  Privacy Policy
+                </Text>
+              </Pressable>
+            </View>
           </View>
         ) : null}
       </View>

@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
+import * as WebBrowser from 'expo-web-browser';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { ChevronRight } from 'lucide-react-native';
 import type { StatsResponse, Units } from '@plate/shared';
@@ -327,7 +328,14 @@ export default function YouTab() {
 
         {/* ─── ACCOUNT ─── */}
         <SectionHeader>Account</SectionHeader>
-        <SettingRow title="Privacy" onPress={soon('Privacy')} />
+        <SettingRow
+          title="Privacy Policy"
+          onPress={() => void WebBrowser.openBrowserAsync('https://plate.best/privacy')}
+        />
+        <SettingRow
+          title="Terms of Use"
+          onPress={() => void WebBrowser.openBrowserAsync('https://plate.best/terms')}
+        />
         <SettingRow
           title="Redo onboarding"
           onPress={() => router.push('/(onboarding)/welcome')}
