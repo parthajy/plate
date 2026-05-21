@@ -53,15 +53,15 @@ async function build() {
       (err instanceof Error && err.name === 'ZodError' && Array.isArray((err as ZodError).issues));
     if (isZodError) {
       const zerr = err as ZodError;
+      const issues = zerr.issues.map((i) => ({
+        path: i.path.join('.'),
+        message: i.message,
+      }));
+      // Log validation failures so we can diagnose bad client payloads —
+      // these never reach Sentry (they're user errors, not server bugs).
+      req.log.warn({ issues, route: `${req.method} ${req.url}` }, 'request validation failed');
       void reply.code(400).send({
-        error: {
-          code: 'VALIDATION',
-          message: 'Invalid request',
-          issues: zerr.issues.map((i) => ({
-            path: i.path.join('.'),
-            message: i.message,
-          })),
-        },
+        error: { code: 'VALIDATION', message: 'Invalid request', issues },
       });
       return;
     }
