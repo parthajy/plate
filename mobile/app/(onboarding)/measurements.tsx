@@ -30,7 +30,9 @@ export default function MeasurementsScreen() {
       subtitle="Metric for now. You can switch units in Settings."
       primaryDisabled={!valid}
       onPrimary={() => {
-        draft.set({ heightCm: h, weightKg: w });
+        // Height is stored as a whole number of centimetres — round in case
+        // the keyboard allowed a decimal.
+        draft.set({ heightCm: Math.round(h), weightKg: w });
         router.push('/(onboarding)/activities');
       }}
     >

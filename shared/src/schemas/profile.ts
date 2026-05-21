@@ -17,7 +17,13 @@ export const OnboardingSchema = z.object({
   // Optional: App Store guideline 5.1.1(v) — age isn't strictly required to
   // run the app. When absent, the BMR calc falls back to a default age.
   birthdate: z.string().date().optional(),
-  heightCm: z.number().int().min(80).max(260),
+  // Round rather than reject: some Android number keyboards let users type a
+  // decimal, and sub-centimetre height precision is meaningless anyway.
+  heightCm: z
+    .number()
+    .min(80)
+    .max(260)
+    .transform((n) => Math.round(n)),
   weightKg: z.number().min(25).max(400),
   activities: z.array(Activity).min(1).max(6),
   goal: Goal,
@@ -42,7 +48,12 @@ export const ProfilePatchSchema = z.object({
   displayName: z.string().trim().min(1).max(64).optional(),
   sex: Sex.optional(),
   birthdate: z.string().date().optional(),
-  heightCm: z.number().int().min(80).max(260).optional(),
+  heightCm: z
+    .number()
+    .min(80)
+    .max(260)
+    .transform((n) => Math.round(n))
+    .optional(),
   weightKg: z.number().min(25).max(400).optional(),
   activities: z.array(Activity).min(1).max(6).optional(),
   goal: Goal.optional(),
