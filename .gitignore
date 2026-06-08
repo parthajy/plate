@@ -23,6 +23,9 @@ yarn-error.log*
 dist/
 build/
 *.tsbuildinfo
+
+# Hosted Android APK — large binary, kept on Netlify only, not in git.
+web/*.apk
 shared/dist/
 
 # Expo

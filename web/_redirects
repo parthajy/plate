@@ -9,6 +9,7 @@
 /about           /about.html           200
 /manifesto       /manifesto.html       200
 /careers         /careers.html         200
+/apk             /plate-latest.apk     200
 
 # Strip trailing slash on the prettied paths so canonical URLs match.
 /privacy/         /privacy.html         200
